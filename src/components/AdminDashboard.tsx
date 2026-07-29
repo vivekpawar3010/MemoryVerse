@@ -918,7 +918,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onLo
                     </div>
 
                     {/* Content List Area */}
-                    <div className="bg-[#070b1e]/70 border border-white/10 rounded-3xl p-6 min-h-[400px]">
+                    <div className="bg-[#070b1e]/70 border border-white/10 rounded-3xl p-6 min-h-[400px] max-h-[70vh] overflow-y-auto">
                       
                       {activeGroupTab === 'photos' && (
                         <div className="space-y-4">
