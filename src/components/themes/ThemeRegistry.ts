@@ -5,6 +5,7 @@ export interface ThemeMetadata {
   style: string;
   performance: 'Low' | 'Medium' | 'High';
   description: string;
+  primaryColor: string;
 }
 
 export const THEME_REGISTRY: ThemeMetadata[] = [
@@ -15,6 +16,7 @@ export const THEME_REGISTRY: ThemeMetadata[] = [
     style: 'Slow cinematic fly-through, glowing holograms',
     performance: 'High',
     description: 'A premium, Pixar/Interstellar style journey through deep space where photos float as glowing holograms.',
+    primaryColor: '#6366f1' // Indigo
   },
   {
     id: 'FloatingMuseum',
@@ -23,6 +25,7 @@ export const THEME_REGISTRY: ThemeMetadata[] = [
     style: 'Smooth hovering, swinging polaroids',
     performance: 'Medium',
     description: 'White walls and soft sunlight. Photos hang from invisible strings and gently swing with gravity.',
+    primaryColor: '#475569' // Slate
   },
   {
     id: 'VintageBook',
@@ -31,6 +34,7 @@ export const THEME_REGISTRY: ThemeMetadata[] = [
     style: 'Realistic page flipping, ink effects',
     performance: 'Medium',
     description: 'An interactive animated book on a vintage desk. Photos are printed directly onto textured paper pages.',
+    primaryColor: '#b45309' // Amber/Brown
   },
   {
     id: 'DreamClouds',
@@ -39,6 +43,7 @@ export const THEME_REGISTRY: ThemeMetadata[] = [
     style: 'Slow wind, peaceful floating',
     performance: 'Medium',
     description: 'A peaceful sky above the clouds at sunset. Photos are attached to floating islands drifting in the wind.',
+    primaryColor: '#f472b6' // Pink
   },
   {
     id: 'OceanMemories',
@@ -47,6 +52,7 @@ export const THEME_REGISTRY: ThemeMetadata[] = [
     style: 'Floating bobbing frames, sailing camera',
     performance: 'High',
     description: 'Floating wooden frames on a realistic ocean surface with small waves and light rays.',
+    primaryColor: '#0ea5e9' // Sky Blue
   },
   {
     id: 'CampfireNight',
@@ -55,6 +61,7 @@ export const THEME_REGISTRY: ThemeMetadata[] = [
     style: 'Warm flickering light, smoke particles',
     performance: 'High',
     description: 'A cozy forest campfire at night. Photos hang on a rope illuminated by flickering firelight and fireflies.',
+    primaryColor: '#ea580c' // Orange
   },
   {
     id: 'CyberFuture',
@@ -63,6 +70,7 @@ export const THEME_REGISTRY: ThemeMetadata[] = [
     style: 'Glitch transitions, neon bloom',
     performance: 'High',
     description: 'High energy futuristic city with neon lights, holograms, and digital matrix-style rain.',
+    primaryColor: '#8b5cf6' // Violet
   },
   {
     id: 'GoldenHour',
@@ -71,5 +79,6 @@ export const THEME_REGISTRY: ThemeMetadata[] = [
     style: 'Lens flare, floating dust',
     performance: 'Medium',
     description: 'Warm, emotional lighting with floating dust particles over a peaceful grassy field.',
+    primaryColor: '#f59e0b' // Amber
   }
 ];

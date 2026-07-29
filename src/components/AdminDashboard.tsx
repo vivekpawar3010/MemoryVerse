@@ -27,6 +27,8 @@ import {
   ArrowUp,
   ArrowDown,
   Music,
+  Compass,
+  Globe2,
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { uploadMediaToSupabaseBucket } from '../lib/supabase';
@@ -450,9 +452,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onLo
           }
         }
       }
-      loadGroupDetails(activeGroup.groupId, true);
+      loadGroupDetails(activeGroup!.groupId, true);
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : `Failed to update ${type}`, true);
+    }
+  };
+
+  const handleManageForAll = async () => {
+    setLoading(true);
+    try {
+      const forAllId = await apiService.ensureForAllGroup();
+      await loadGroupDetails(forAllId, true);
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Failed to load For All group', true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -680,6 +694,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onLo
             <h1 className="font-cinzel text-lg sm:text-xl font-bold text-white">
               {activeGroup ? activeGroup.groupName : 'Dashboard Overview'}
             </h1>
+          </div>
+          <div className="flex items-center space-x-3">
+            {!activeGroup && (
+              <button
+                onClick={handleManageForAll}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold tracking-wide flex items-center space-x-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+              >
+                <Globe2 className="w-4 h-4" />
+                <span>Manage 'For All' Content</span>
+              </button>
+            )}
           </div>
         </header>
 

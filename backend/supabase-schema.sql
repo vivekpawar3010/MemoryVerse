@@ -200,3 +200,28 @@ CREATE POLICY "Auth Update Access" ON storage.objects FOR UPDATE USING (bucket_i
 DROP POLICY IF EXISTS "Auth Delete Access" ON storage.objects;
 CREATE POLICY "Auth Delete Access" ON storage.objects FOR DELETE USING (bucket_id = 'media' AND auth.role() = 'authenticated');
 
+-- =========================================================
+-- STEP 6: Visitor Logs
+-- Tracks visitors entering global and private groups
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS public.visitor_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    visitor_name TEXT NOT NULL,
+    group_id UUID NOT NULL REFERENCES public.memory_groups(id) ON DELETE CASCADE,
+    visited_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.visitor_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow anonymous inserts to visitor_logs" ON public.visitor_logs;
+CREATE POLICY "Allow anonymous inserts to visitor_logs"
+    ON public.visitor_logs FOR INSERT
+    TO public
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow authenticated to view visitor_logs" ON public.visitor_logs;
+CREATE POLICY "Allow authenticated to view visitor_logs"
+    ON public.visitor_logs FOR SELECT
+    TO authenticated
+    USING (true);

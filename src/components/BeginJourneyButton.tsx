@@ -6,11 +6,13 @@ import { Compass, Sparkles, X, Heart } from 'lucide-react';
 interface BeginJourneyButtonProps {
   isVisible: boolean;
   onPlaySound?: () => void;
+  onContinue?: () => void;
 }
 
 export const BeginJourneyButton: React.FC<BeginJourneyButtonProps> = ({
   isVisible,
   onPlaySound,
+  onContinue,
 }) => {
   const [showModal, setShowModal] = useState(false);
 
@@ -115,7 +117,10 @@ export const BeginJourneyButton: React.FC<BeginJourneyButtonProps> = ({
               </div>
 
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  if (onContinue) onContinue();
+                }}
                 className="px-6 py-2.5 rounded-full font-cinzel text-xs uppercase tracking-widest bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/40 text-amber-200 transition-all cursor-pointer"
               >
                 Continue Journey

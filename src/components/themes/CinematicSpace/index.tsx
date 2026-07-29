@@ -1,11 +1,69 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Stars, Sparkles, useTexture, useScroll, Float, Text } from '@react-three/drei';
+import { Stars, Sparkles, useTexture, useScroll, Float, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { ThemeProps } from '../ThemeInterface';
 
 // Easing function for smooth scroll interpolation
 const damp = THREE.MathUtils.damp;
+
+function LiveBubbles({ count = 80, isLightMode = false }) {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  
+  const particles = useMemo(() => {
+    const temp = [];
+    for (let i = 0; i < count; i++) {
+      const x = (Math.random() - 0.5) * 50;
+      const y = (Math.random() - 0.5) * 50;
+      const z = (Math.random() - 0.5) * 150;
+      const speed = 0.5 + Math.random() * 1.5;
+      const scale = 0.2 + Math.random() * 1.5;
+      temp.push({ x, y, z, speed, scale, timeOffset: Math.random() * Math.PI * 2 });
+    }
+    return temp;
+  }, [count]);
+
+  useFrame((state, delta) => {
+    if (!mesh.current) return;
+    const time = state.clock.getElapsedTime();
+    
+    particles.forEach((particle, i) => {
+      particle.y += particle.speed * delta;
+      if (particle.y > 30) particle.y = -30;
+      
+      const swayX = Math.sin(time * 0.5 + particle.timeOffset) * 0.5;
+      const swayZ = Math.cos(time * 0.5 + particle.timeOffset) * 0.5;
+      
+      dummy.position.set(particle.x + swayX, particle.y, particle.z + swayZ);
+      dummy.scale.setScalar(particle.scale);
+      dummy.updateMatrix();
+      mesh.current!.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <>
+      {/* Environment map is required for glass refraction (transmission) to work properly */}
+      <Environment preset={isLightMode ? "sunset" : "studio"} />
+      <instancedMesh ref={mesh} args={[null as any, null as any, count]}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshPhysicalMaterial 
+          transmission={1} 
+          roughness={0.1} 
+          thickness={2}
+          ior={1.33} // Water/Bubble IOR
+          envMapIntensity={isLightMode ? 1.5 : 0.5} 
+          clearcoat={1}
+          transparent
+          opacity={isLightMode ? 0.7 : 0.4}
+          color={isLightMode ? "#ffffff" : "#a5b4fc"}
+        />
+      </instancedMesh>
+    </>
+  );
+}
 
 function PhotoNode({ item, index, total, activePhotoId, setActivePhotoId, isLightMode }: any) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -130,11 +188,7 @@ export default function CinematicSpaceTheme({ data, isLowEndDevice, activePhotoI
       <ambientLight intensity={isLightMode ? 1.2 : 0.5} />
       
       {!isLowEndDevice && (
-        isLightMode ? (
-          <Sparkles count={800} scale={150} size={4} speed={0.2} opacity={0.3} color="#d4af37" />
-        ) : (
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        )
+        <LiveBubbles count={isLightMode ? 60 : 80} isLightMode={isLightMode} />
       )}
       
       <mesh position={[0, 0, - (photos.length * 6) - 20]}>

@@ -27,3 +27,29 @@ ADD COLUMN IF NOT EXISTS ambient_audio TEXT;
 
 -- Move data from audio_url to ambient_audio if needed
 UPDATE memory_groups SET ambient_audio = audio_url WHERE ambient_audio IS NULL AND audio_url IS NOT NULL;
+
+-- =========================================================
+-- STEP 4: Visitor Logs
+-- Tracks visitors entering global and private groups
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS public.visitor_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    visitor_name TEXT NOT NULL,
+    group_id UUID NOT NULL REFERENCES public.memory_groups(id) ON DELETE CASCADE,
+    visited_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.visitor_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow anonymous inserts to visitor_logs" ON public.visitor_logs;
+CREATE POLICY "Allow anonymous inserts to visitor_logs"
+    ON public.visitor_logs FOR INSERT
+    TO public
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow authenticated to view visitor_logs" ON public.visitor_logs;
+CREATE POLICY "Allow authenticated to view visitor_logs"
+    ON public.visitor_logs FOR SELECT
+    TO authenticated
+    USING (true);

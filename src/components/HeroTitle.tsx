@@ -186,7 +186,7 @@ export const HeroTitle: React.FC<HeroTitleProps> = ({
                 triggerGreenWaterFill();
               }
             }}
-            placeholder="Enter your name (e.g. Vivek's friend)..."
+            placeholder="Enter your name..."
             className="w-full pl-10 pr-16 py-2 bg-emerald-950/20 border border-emerald-400/50 rounded-full text-xs font-semibold text-emerald-100 placeholder-emerald-300/50 focus:outline-none focus:border-emerald-300 focus:ring-1 focus:ring-emerald-400/50 transition-all text-center"
           />
           {visitorName.trim() && (

@@ -181,9 +181,100 @@ export const apiService = {
       throw new Error('Incorrect group password. Please try again.');
     }
 
-    const groupId = grpRow.id as string;
+    return apiService.fetchGroupMediaAndAccess(grpRow);
+  },
 
-    // Fetch associated media in parallel
+  setGroupAsDefault: async (groupId: string): Promise<void> => {
+    const { data: groups, error: fetchError } = await supabase.from('memory_groups').select('id, theme_settings');
+    if (fetchError || !groups) throw new Error(fetchError?.message ?? 'Failed to fetch groups');
+
+    for (const group of groups) {
+      const settings = group.theme_settings || {};
+      if (group.id === groupId) {
+        settings.isDefault = true;
+      } else {
+        if (settings.isDefault) {
+          settings.isDefault = false;
+        } else {
+          continue; 
+        }
+      }
+      await supabase.from('memory_groups').update({ theme_settings: settings }).eq('id', group.id);
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // Get all groups for dashboard
+  // -------------------------------------------------------------------------
+  getDefaultForPublicJourney: async (): Promise<VisitorGroupAccess> => {
+    let { data, error } = await supabase
+      .from('memory_groups')
+      .select('*')
+      .eq('status', 'ACTIVE')
+      .contains('theme_settings', { isDefault: true })
+      .limit(1);
+
+    if (error || !data || data.length === 0) {
+      // Create it if it doesn't exist
+      const newGroupId = await apiService.ensureForAllGroup();
+      // Fetch it again
+      const newRes = await supabase.from('memory_groups').select('*').eq('id', newGroupId).single();
+      if (newRes.error || !newRes.data) throw new Error('Failed to load global group');
+      return apiService.fetchGroupMediaAndAccess(newRes.data);
+    }
+
+    return apiService.fetchGroupMediaAndAccess(data[0]);
+  },
+
+  // -------------------------------------------------------------------------
+  // Ensure "For All" Group Exists
+  // -------------------------------------------------------------------------
+  ensureForAllGroup: async (): Promise<string> => {
+    const { data } = await supabase
+      .from('memory_groups')
+      .select('id')
+      .contains('theme_settings', { isDefault: true })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      return data[0].id;
+    }
+
+    const { data: newGroup, error } = await supabase
+      .from('memory_groups')
+      .insert({
+        group_name: 'For All (Global)',
+        memory_id: 'GLOBAL_FOR_ALL',
+        password_hash: 'NO_PASSWORD',
+        theme_settings: { isDefault: true },
+        theme: 'CinematicSpace',
+        status: 'ACTIVE'
+      })
+      .select('id')
+      .single();
+    
+    if (error || !newGroup) throw new Error('Failed to create For All group');
+    return newGroup.id;
+  },
+
+  // -------------------------------------------------------------------------
+  // Log Visitor Access
+  // -------------------------------------------------------------------------
+  logVisitorAccess: async (visitorName: string, groupId: string): Promise<void> => {
+    try {
+      await supabase.from('visitor_logs').insert({
+        visitor_name: visitorName,
+        group_id: groupId,
+      });
+    } catch (e) {
+      console.error('Failed to log visitor access', e);
+    }
+  },
+
+  // Helper to fetch media for a group and return VisitorGroupAccess
+  fetchGroupMediaAndAccess: async (grpRow: any): Promise<VisitorGroupAccess> => {
+    const groupId = grpRow.id as string;
+    // This is now inside fetchGroupMediaAndAccess
     const [photosRes, videosRes, quotesRes, finalMsgRes] = await Promise.all([
       supabase
         .from('photos')
@@ -389,7 +480,7 @@ export const apiService = {
         ambientAudio: (row.ambient_audio as string) ?? undefined,
         endingAudio: (row.ending_audio as string) ?? undefined,
         introQuote: (row.intro_quote as string) ?? undefined,
-        themeSettings: row.theme_settings ?? undefined,
+        themeSettings: row.theme_settings as Record<string, any> ?? undefined,
         allowDownload: (row.allow_download as boolean) ?? false,
         allowShare: (row.allow_share as boolean) ?? false,
         showWatermark: (row.show_watermark as boolean) ?? true,
@@ -405,7 +496,7 @@ export const apiService = {
         finalMessageTitle: fm?.title ?? '',
         finalMessageText: fm?.message ?? '',
       };
-    });
+    }).filter(g => !g.themeSettings?.isDefault);
   },
 
   // -------------------------------------------------------------------------

@@ -1,11 +1,12 @@
 import React, { Suspense, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { ScrollControls, useProgress } from '@react-three/drei';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Settings2 } from 'lucide-react';
 import { VisitorGroupAccess } from '../types';
 import { AudioManager } from './AudioManager';
 import { ImageViewer } from './ImageViewer';
 import { ProtectionWrapper } from './ProtectionWrapper';
+import { THEME_REGISTRY } from './themes/ThemeRegistry';
 
 // Lazy load all themes
 const themeComponents: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
@@ -40,7 +41,9 @@ const CanvasLoader = () => {
 };
 
 export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
-  const themeId = data.theme || 'CinematicSpace';
+  const initialThemeId = data.theme || 'CinematicSpace';
+  const [localThemeId, setLocalThemeId] = useState(initialThemeId);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
   
   // Determine if it's a low end device
@@ -51,8 +54,11 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
     return cores < 4 || memory < 4;
   }, []);
 
-  const ThemeComponent = themeComponents[themeId] || themeComponents['CinematicSpace'];
+  const ThemeComponent = themeComponents[localThemeId] || themeComponents['CinematicSpace'];
   const pages = Math.max(3, (data.photos?.length || 0) / 2); // Dynamic scroll length
+
+  const activeThemeMetadata = useMemo(() => THEME_REGISTRY.find(t => t.id === localThemeId) || THEME_REGISTRY[0], [localThemeId]);
+  const primaryColor = activeThemeMetadata.primaryColor;
 
   const bgColor = data.themeSettings?.backgroundColor || '#050816';
   const textColor = data.themeSettings?.textColor || '#ffffff';
@@ -71,7 +77,11 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
         {/* Global HUD */}
         <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-start pointer-events-none">
           <div className="pointer-events-auto">
-            <button onClick={onBack} className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-sm font-semibold transition-colors cursor-pointer">
+            <button 
+              onClick={onBack} 
+              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer backdrop-blur-md"
+              style={{ backgroundColor: `${primaryColor}40`, border: `1px solid ${primaryColor}80`, color: textColor }}
+            >
               <ArrowLeft className="w-4 h-4" />
               <span>Exit Portal</span>
             </button>
@@ -81,6 +91,41 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
             <p className="uppercase tracking-widest text-xs mt-1 drop-shadow-md" style={{ color: textColor, opacity: 0.8 }}>
               Cinematic Memory Experience
             </p>
+          </div>
+          
+          <div className="pointer-events-auto relative">
+            <button 
+              onClick={() => setShowThemeMenu(!showThemeMenu)}
+              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer shadow-lg backdrop-blur-md"
+              style={{ backgroundColor: `${primaryColor}40`, border: `1px solid ${primaryColor}80`, color: textColor }}
+            >
+              <Settings2 className="w-4 h-4" />
+              <span>Change Theme</span>
+            </button>
+            
+            {showThemeMenu && (
+              <div className="absolute right-0 mt-2 w-64 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl py-2 z-50">
+                <div className="px-4 py-2 border-b border-white/10 mb-2">
+                  <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Select Environment</p>
+                </div>
+                <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                  {THEME_REGISTRY.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setLocalThemeId(t.id);
+                        setShowThemeMenu(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm transition-colors text-white/80 hover:bg-white/10`}
+                      style={localThemeId === t.id ? { backgroundColor: `${primaryColor}60`, color: '#ffffff' } : {}}
+                    >
+                      <p className="font-semibold leading-tight">{t.name}</p>
+                      <p className="text-[10px] text-white/50 mt-1">{t.style}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

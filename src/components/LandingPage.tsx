@@ -31,10 +31,6 @@ export const LandingPage: React.FC = () => {
   const [showVaultForm, setShowVaultForm] = useState(false);
 
   const [visitorName, setVisitorName] = useState('');
-  const [isEligibleUser, setIsEligibleUser] = useState(false);
-  const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
-  const [eligibilityReason, setEligibilityReason] = useState<string | null>(null);
-
   const [groupNameInput, setGroupNameInput] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,36 +38,6 @@ export const LandingPage: React.FC = () => {
   const [accessData, setAccessData] = useState<VisitorGroupAccess | null>(null);
   const [wishToast, setWishToast] = useState<string | null>(null);
   const [isBrightened, setIsBrightened] = useState(false);
-
-  // Quietly check eligibility when visitor name changes
-  React.useEffect(() => {
-    const trimmed = visitorName.trim();
-    if (!trimmed) {
-      setIsEligibleUser(false);
-      setEligibilityReason(null);
-      return;
-    }
-
-    let isMounted = true;
-
-    apiService.checkVisitorEligibility(trimmed).then((res) => {
-      if (!isMounted) return;
-      if (res.isEligible) {
-        setIsEligibleUser(true);
-        setEligibilityReason(res.reason || 'Verified Access Granted');
-        if (!groupNameInput && res.matchedGroup) {
-          setGroupNameInput(res.matchedGroup.groupName);
-        }
-      } else {
-        setIsEligibleUser(false);
-        setEligibilityReason(res.reason || 'Name not recognized.');
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [visitorName]);
 
   const triggerStarShower = async (nameOverride?: string) => {
     // Brighten up the 3D space background and multiply glowing stars
@@ -152,19 +118,6 @@ export const LandingPage: React.FC = () => {
 
     setWishToast(msg);
     setTimeout(() => setWishToast(null), 8000);
-
-    // 4. Verify eligibility to enable top right corner "🔓 Unlock Vault" option
-    if (rawInput) {
-      const res = await apiService.checkVisitorEligibility(rawInput);
-      if (res.isEligible) {
-        setIsEligibleUser(true);
-        if (!groupNameInput && res.matchedGroup) {
-          setGroupNameInput(res.matchedGroup.groupName);
-        }
-      } else {
-        setIsEligibleUser(false);
-      }
-    }
   };
 
   const playSpaceSoundEffect = () => {
@@ -203,11 +156,6 @@ export const LandingPage: React.FC = () => {
       return;
     }
 
-    if (!isEligibleUser) {
-      setError('Access Denied: Your name must be registered in the admin DB or match "vivek\'s friend".');
-      return;
-    }
-
     if (!groupNameInput.trim() || !password) {
       setError('Please fill in both Group Name and Password.');
       return;
@@ -220,6 +168,7 @@ export const LandingPage: React.FC = () => {
       const res = await apiService.verifyVisitorMemoryAccess(groupNameInput, password);
       setAccessData(res);
       triggerStarShower(visitorName.trim());
+      apiService.logVisitorAccess(visitorName.trim(), res.groupId);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -234,11 +183,30 @@ export const LandingPage: React.FC = () => {
   const handleUseDemoCredentials = (groupName: string, demoPass: string) => {
     setGroupNameInput(groupName);
     setPassword(demoPass);
-    if (!visitorName.trim() || !isEligibleUser) {
-      setVisitorName("vivek's friend");
+    if (!visitorName.trim()) {
+      setVisitorName("Guest User");
     }
     setError(null);
     setShowVaultForm(true);
+  };
+
+  const handleContinueJourney = async () => {
+    setLoading(true);
+    try {
+      const res = await apiService.getDefaultForPublicJourney();
+      setAccessData(res);
+      const vName = visitorName.trim() || "Guest";
+      triggerStarShower(vName);
+      apiService.logVisitorAccess(vName, res.groupId);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('No default public group found. Please login via the Vault portal.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (accessData) {
@@ -273,17 +241,18 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Top Right Header Unlock Vault button (Appears when eligible / verified) */}
-            {isEligibleUser && (
+
+            {/* Top Right Header Unlock Vault button (Appears when name is entered) */}
+            {visitorName.trim() && (
               <button
                 onClick={() => {
                   setShowVaultForm(true);
                   playSpaceSoundEffect();
                 }}
-                className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-600/30 to-emerald-600/30 border border-amber-400/60 text-amber-200 hover:scale-105 text-xs font-bold tracking-wider flex items-center space-x-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(245,158,11,0.3)] animate-pulse"
+                className="px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-pink-500/30 border border-purple-400/50 hover:border-pink-400/80 text-white hover:text-pink-200 hover:scale-105 text-xs font-bold tracking-widest flex items-center space-x-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] backdrop-blur-md"
               >
-                <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
-                <span>🔓 Unlock Vault</span>
+                <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-300 animate-pulse" />
+                <span>🔓 UNLOCK VAULT</span>
               </button>
             )}
           </div>
@@ -317,9 +286,12 @@ export const LandingPage: React.FC = () => {
             onWishTrigger={triggerStarShower}
           />
 
-          {/* Begin Journey Button */}
           <div className="flex items-center justify-center mt-3">
-            <BeginJourneyButton isVisible={isLoaded} onPlaySound={playSpaceSoundEffect} />
+            <BeginJourneyButton 
+              isVisible={isLoaded} 
+              onPlaySound={playSpaceSoundEffect}
+              onContinue={handleContinueJourney} 
+            />
           </div>
 
           {/* Unlock Memory Vault Full Screen Dedicated Page */}
@@ -378,7 +350,7 @@ export const LandingPage: React.FC = () => {
                           type="text"
                           value={visitorName}
                           onChange={(e) => setVisitorName(e.target.value)}
-                          placeholder="e.g. Alex or Vivek's friend"
+                          placeholder="e.g. Alex or Sarah"
                           className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs sm:text-sm tracking-wide text-emerald-100 placeholder-slate-500 focus:outline-none focus:border-emerald-400/60 focus:ring-1 focus:ring-emerald-400/40 transition-all font-sans-clean"
                         />
                       </div>
@@ -450,34 +422,7 @@ export const LandingPage: React.FC = () => {
                     </button>
                   </form>
 
-                  {/* Sample Group Access Helper */}
-                  <div className="mt-6 pt-4 border-t border-white/10 text-center">
-                    <p className="text-[10px] font-medium tracking-wider text-slate-400 uppercase mb-2">
-                      Sample Group Credentials for Testing:
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleUseDemoCredentials('The Starlight Squad 2026', 'friendship2026')
-                        }
-                        className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-amber-400/40 text-xs text-amber-200/90 transition-all cursor-pointer flex items-center justify-between"
-                      >
-                        <span className="font-medium">The Starlight Squad 2026</span>
-                        <span className="font-mono text-[10px] text-slate-400">Pass: friendship2026</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleUseDemoCredentials('High School Band Reunion', 'reunion2026')
-                        }
-                        className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-amber-400/40 text-xs text-amber-200/90 transition-all cursor-pointer flex items-center justify-between"
-                      >
-                        <span className="font-medium">High School Band Reunion</span>
-                        <span className="font-mono text-[10px] text-slate-400">Pass: reunion2026</span>
-                      </button>
-                    </div>
-                  </div>
+
                 </div>
               </motion.div>
             )}
