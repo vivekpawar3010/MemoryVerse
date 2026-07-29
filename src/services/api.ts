@@ -210,11 +210,15 @@ export const apiService = {
     let { data, error } = await supabase
       .from('memory_groups')
       .select('*')
-      .eq('status', 'ACTIVE')
-      .contains('theme_settings', { isDefault: true })
-      .limit(1);
+      .eq('status', 'ACTIVE');
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
+      throw new Error('Failed to load groups');
+    }
+
+    let defaultGroup = data.find((g: any) => g.theme_settings?.isDefault === true);
+
+    if (!defaultGroup) {
       // Create it if it doesn't exist
       const newGroupId = await apiService.ensureForAllGroup();
       // Fetch it again
@@ -223,7 +227,7 @@ export const apiService = {
       return apiService.fetchGroupMediaAndAccess(newRes.data);
     }
 
-    return apiService.fetchGroupMediaAndAccess(data[0]);
+    return apiService.fetchGroupMediaAndAccess(defaultGroup);
   },
 
   // -------------------------------------------------------------------------
@@ -232,12 +236,11 @@ export const apiService = {
   ensureForAllGroup: async (): Promise<string> => {
     const { data } = await supabase
       .from('memory_groups')
-      .select('id')
-      .contains('theme_settings', { isDefault: true })
-      .limit(1);
+      .select('id, theme_settings');
 
-    if (data && data.length > 0) {
-      return data[0].id;
+    if (data) {
+      const existing = data.find((g: any) => g.theme_settings?.isDefault === true);
+      if (existing) return existing.id;
     }
 
     const { data: newGroup, error } = await supabase

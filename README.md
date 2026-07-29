@@ -2,6 +2,8 @@
 
 MemoryVerse is a private digital memory-sharing platform where administrators create and manage multiple private friendship groups. Each friendship group can securely access only its own memories using a unique **Memory ID** and **Password** and view them through dynamic 3D WebGL themes.
 
+🌐 **Live Demo:** [https://mymemoryverse.vercel.app/](https://mymemoryverse.vercel.app/)
+
 ---
 
 ## 🚀 Features
