@@ -1,13 +1,13 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Stars, useTexture, useScroll, Float, Text } from '@react-three/drei';
+import { Stars, Sparkles, useTexture, useScroll, Float, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { ThemeProps } from '../ThemeInterface';
 
 // Easing function for smooth scroll interpolation
 const damp = THREE.MathUtils.damp;
 
-function PhotoNode({ item, index, total, activePhotoId, setActivePhotoId }: any) {
+function PhotoNode({ item, index, total, activePhotoId, setActivePhotoId, isLightMode }: any) {
   const meshRef = useRef<THREE.Mesh>(null);
   const texture = useTexture(item.imageUrl);
   const scroll = useScroll();
@@ -80,7 +80,7 @@ function PhotoNode({ item, index, total, activePhotoId, setActivePhotoId }: any)
         {/* Glow */}
         <mesh position={[0, 0, -0.05]}>
           <planeGeometry args={[2.2, 2.2 * (((texture as any).image ? (texture as any).image.height / (texture as any).image.width : 1) || 1)]} />
-          <meshBasicMaterial color={[0.5, 0.8, 1]} transparent opacity={isActive ? 0.5 : (hovered ? 0.3 : 0)} side={THREE.DoubleSide} />
+          <meshBasicMaterial color={isLightMode ? [0.9, 0.8, 0.6] : [0.5, 0.8, 1]} transparent opacity={isActive ? 0.5 : (hovered ? 0.3 : 0)} side={THREE.DoubleSide} />
         </mesh>
       </mesh>
     </Float>
@@ -116,19 +116,30 @@ function CameraController({ totalPhotos, activePhotoId }: { totalPhotos: number,
 
 export default function CinematicSpaceTheme({ data, isLowEndDevice, activePhotoId, setActivePhotoId }: ThemeProps) {
   const photos = data.photos || [];
+  
+  // Determine if it's light mode based on the user's selected background color
+  const bgColor = data.themeSettings?.backgroundColor || '#02040a';
+  const colorObj = useMemo(() => new THREE.Color(bgColor), [bgColor]);
+  const hsl = { h: 0, s: 0, l: 0 };
+  colorObj.getHSL(hsl);
+  const isLightMode = hsl.l > 0.5;
 
   return (
     <group>
-      <color attach="background" args={['#02040a']} />
-      <ambientLight intensity={0.5} />
+      <color attach="background" args={[isLightMode ? '#f5f7fa' : '#02040a']} />
+      <ambientLight intensity={isLightMode ? 1.2 : 0.5} />
       
       {!isLowEndDevice && (
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        isLightMode ? (
+          <Sparkles count={800} scale={150} size={4} speed={0.2} opacity={0.3} color="#d4af37" />
+        ) : (
+          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        )
       )}
       
       <mesh position={[0, 0, - (photos.length * 6) - 20]}>
         <planeGeometry args={[200, 200]} />
-        <meshBasicMaterial color={[0.05, 0.1, 0.2]} transparent opacity={0.5} />
+        <meshBasicMaterial color={isLightMode ? [0.9, 0.95, 1] : [0.05, 0.1, 0.2]} transparent opacity={0.5} />
       </mesh>
       
       <CameraController totalPhotos={photos.length} activePhotoId={activePhotoId} />
@@ -140,7 +151,8 @@ export default function CinematicSpaceTheme({ data, isLowEndDevice, activePhotoI
             index={i} 
             total={photos.length} 
             activePhotoId={activePhotoId} 
-            setActivePhotoId={setActivePhotoId} 
+            setActivePhotoId={setActivePhotoId}
+            isLightMode={isLightMode}
           />
         </React.Suspense>
       ))}

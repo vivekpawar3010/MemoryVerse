@@ -7,23 +7,16 @@ import { AudioManager } from './AudioManager';
 import { ImageViewer } from './ImageViewer';
 import { ProtectionWrapper } from './ProtectionWrapper';
 
-// Lazy load all themes (these will now just be 3D scene components)
+// Lazy load all themes
 const themeComponents: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   'CinematicSpace': React.lazy(() => import('./themes/CinematicSpace')),
   'FloatingMuseum': React.lazy(() => import('./themes/FloatingMuseum')),
   'VintageBook': React.lazy(() => import('./themes/VintageBook')),
-  'GlassGallery': React.lazy(() => import('./themes/GlassGallery')),
   'DreamClouds': React.lazy(() => import('./themes/DreamClouds')),
   'OceanMemories': React.lazy(() => import('./themes/OceanMemories')),
   'CampfireNight': React.lazy(() => import('./themes/CampfireNight')),
   'CyberFuture': React.lazy(() => import('./themes/CyberFuture')),
-  'RoyalMuseum': React.lazy(() => import('./themes/RoyalMuseum')),
-  'GalaxyConstellation': React.lazy(() => import('./themes/GalaxyConstellation')),
-  'CherryBlossom': React.lazy(() => import('./themes/CherryBlossom')),
   'GoldenHour': React.lazy(() => import('./themes/GoldenHour')),
-  'Christmas': React.lazy(() => import('./themes/Christmas')),
-  'RainyWindow': React.lazy(() => import('./themes/RainyWindow')),
-  'AuroraDreams': React.lazy(() => import('./themes/AuroraDreams')),
 };
 
 interface Props {
