@@ -53,7 +53,7 @@ export const BeginJourneyButton: React.FC<BeginJourneyButtonProps> = ({
       >
         <button
           onClick={handleClick}
-          className="group relative inline-flex items-center justify-center px-10 py-4 overflow-hidden rounded-full font-sans-clean font-medium tracking-widest uppercase text-xs text-white transition-all duration-300 bg-white/5 backdrop-blur-md border border-white/20 hover:bg-white/10 hover:border-white/40 hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95 cursor-pointer"
+          className="group relative inline-flex items-center justify-center px-6 py-3 sm:px-10 sm:py-4 overflow-hidden rounded-full font-sans-clean font-medium tracking-widest uppercase text-xs text-white transition-all duration-300 bg-white/5 backdrop-blur-md border border-white/20 hover:bg-white/10 hover:border-white/40 hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95 cursor-pointer"
         >
           {/* Animated background subtle sheen */}
           <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

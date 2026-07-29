@@ -251,8 +251,9 @@ export const LandingPage: React.FC = () => {
                 }}
                 className="px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-pink-500/30 border border-purple-400/50 hover:border-pink-400/80 text-white hover:text-pink-200 hover:scale-105 text-xs font-bold tracking-widest flex items-center space-x-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] backdrop-blur-md"
               >
-                <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-300 animate-pulse" />
-                <span>🔓 UNLOCK VAULT</span>
+                <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-300 animate-pulse shrink-0" />
+                <span className="hidden sm:inline">🔓 UNLOCK VAULT</span>
+                <span className="sm:hidden">🔓</span>
               </button>
             )}
           </div>

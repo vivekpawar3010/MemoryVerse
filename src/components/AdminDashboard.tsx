@@ -699,10 +699,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminEmail, onLo
             {!activeGroup && (
               <button
                 onClick={handleManageForAll}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold tracking-wide flex items-center space-x-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                className="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold tracking-wide flex items-center space-x-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.3)]"
               >
-                <Globe2 className="w-4 h-4" />
-                <span>Manage 'For All' Content</span>
+                <Globe2 className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Manage 'For All' Content</span>
+                <span className="sm:hidden">For All</span>
               </button>
             )}
           </div>
