@@ -102,34 +102,44 @@ export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ audioSrc = '/a
   };
 
   useEffect(() => {
-    // 1. Attempt immediate autoplay on mount
+    // 1. Immediately start Web Audio ambient synth for ZERO-delay (0ms) instant audio playback
+    startSpaceAmbientSynth();
+    setIsPlaying(true);
+
+    // 2. Play HTML5 audio element. When MP3 finishes buffering, stop synth seamlessly.
     if (audioRef.current && audioSrc) {
+      audioRef.current.volume = 0.8;
       audioRef.current.play().then(() => {
-        setIsPlaying(true);
+        stopSpaceAmbientSynth();
       }).catch(() => {
-        // Autoplay policy prevented immediate playback; wait for first interaction
+        // Autoplay policy prevented playback until user interaction
       });
     }
 
-    // 2. Global one-time interaction triggers for immediate playback on first click/touch/keypress/scroll
-    const handleFirstUserInteraction = () => {
+    // 3. Global one-time interaction listener to trigger MP3 playback on ANY user interaction
+    const handleInteraction = () => {
       if (audioRef.current && audioRef.current.paused) {
         audioRef.current.play().then(() => {
+          stopSpaceAmbientSynth();
           setIsPlaying(true);
         }).catch(() => {});
+      } else {
+        setIsPlaying(true);
       }
     };
 
-    window.addEventListener('click', handleFirstUserInteraction, { once: true });
-    window.addEventListener('keydown', handleFirstUserInteraction, { once: true });
-    window.addEventListener('touchstart', handleFirstUserInteraction, { once: true });
-    window.addEventListener('scroll', handleFirstUserInteraction, { once: true });
+    window.addEventListener('pointerdown', handleInteraction, { once: true });
+    window.addEventListener('click', handleInteraction, { once: true });
+    window.addEventListener('keydown', handleInteraction, { once: true });
+    window.addEventListener('touchstart', handleInteraction, { once: true });
+    window.addEventListener('scroll', handleInteraction, { once: true });
 
     return () => {
-      window.removeEventListener('click', handleFirstUserInteraction);
-      window.removeEventListener('keydown', handleFirstUserInteraction);
-      window.removeEventListener('touchstart', handleFirstUserInteraction);
-      window.removeEventListener('scroll', handleFirstUserInteraction);
+      window.removeEventListener('pointerdown', handleInteraction);
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+      window.removeEventListener('scroll', handleInteraction);
       stopSpaceAmbientSynth();
       if (audioCtxRef.current) {
         audioCtxRef.current.close();
@@ -139,9 +149,18 @@ export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ audioSrc = '/a
 
   return (
     <div className="fixed bottom-6 right-6 z-40">
-      {/* Optional future HTML5 Audio tag for custom mp3 file integration */}
+      {/* HTML5 Audio tag with instant playback listeners */}
       {audioSrc && (
-        <audio ref={audioRef} src={audioSrc} loop preload="auto" />
+        <audio 
+          ref={audioRef} 
+          src={audioSrc} 
+          loop 
+          preload="auto"
+          onPlaying={() => {
+            stopSpaceAmbientSynth();
+            setIsPlaying(true);
+          }}
+        />
       )}
 
       <motion.button

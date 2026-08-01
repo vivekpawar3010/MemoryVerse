@@ -9,7 +9,7 @@ interface AudioManagerProps {
 }
 
 export const AudioManager: React.FC<AudioManagerProps> = ({ ambientUrl, endingUrl, isEnding }) => {
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   
   const ambientRef = useRef<HTMLAudioElement | null>(null);
@@ -20,14 +20,29 @@ export const AudioManager: React.FC<AudioManagerProps> = ({ ambientUrl, endingUr
       ambientRef.current = new Audio(ambientUrl);
       ambientRef.current.loop = true;
       ambientRef.current.volume = 0;
+      ambientRef.current.preload = 'auto';
     }
     if (endingUrl && !endingRef.current) {
       endingRef.current = new Audio(endingUrl);
       endingRef.current.loop = false;
       endingRef.current.volume = 0;
+      endingRef.current.preload = 'auto';
     }
 
+    const triggerPlayOnUserAction = () => {
+      if (ambientRef.current && ambientRef.current.paused) {
+        ambientRef.current.play().catch(() => {});
+      }
+    };
+
+    window.addEventListener('pointerdown', triggerPlayOnUserAction, { once: true });
+    window.addEventListener('click', triggerPlayOnUserAction, { once: true });
+    window.addEventListener('scroll', triggerPlayOnUserAction, { once: true });
+
     return () => {
+      window.removeEventListener('pointerdown', triggerPlayOnUserAction);
+      window.removeEventListener('click', triggerPlayOnUserAction);
+      window.removeEventListener('scroll', triggerPlayOnUserAction);
       if (ambientRef.current) {
         ambientRef.current.pause();
         ambientRef.current = null;
