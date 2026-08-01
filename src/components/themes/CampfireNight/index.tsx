@@ -80,7 +80,7 @@ function HangingPhoto({ item, index, total, activePhotoId, setActivePhotoId }: a
 
         <mesh>
           <planeGeometry args={[width, height]} />
-          <meshStandardMaterial map={texture} roughness={0.6} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+          <meshStandardMaterial map={texture as any} roughness={0.6} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
         </mesh>
         
         {/* Polaroid Frame */}

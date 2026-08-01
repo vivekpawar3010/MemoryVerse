@@ -79,7 +79,7 @@ function Page({ item, index, total, activePhotoId, setActivePhotoId }: any) {
           onPointerOut={() => setHovered(false)}
         >
           <planeGeometry args={[width, height]} />
-          <meshStandardMaterial map={texture} roughness={0.8} />
+          <meshStandardMaterial map={texture as any} roughness={0.8} />
           
           {/* Hover highlight */}
           {hovered && !isActive && (

@@ -86,7 +86,7 @@ function FieldPhoto({ item, index, total, activePhotoId, setActivePhotoId }: any
 
         <mesh castShadow>
           <planeGeometry args={[width, height]} />
-          <meshStandardMaterial map={texture} roughness={0.5} transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
+          <meshStandardMaterial map={texture as any} roughness={0.5} transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
         </mesh>
         
         {/* Simple Frame */}

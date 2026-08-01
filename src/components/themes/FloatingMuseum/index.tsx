@@ -91,7 +91,7 @@ function MuseumPhoto({ item, index, total, activePhotoId, setActivePhotoId }: an
         onPointerOut={() => setHovered(false)}
       >
         <planeGeometry args={[width, height]} />
-        <meshStandardMaterial map={texture} roughness={0.2} metalness={0.1} transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
+        <meshStandardMaterial map={texture as any} roughness={0.2} metalness={0.1} transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
         
         {/* Frame */}
         <mesh position={[0, 0, -0.05]}>

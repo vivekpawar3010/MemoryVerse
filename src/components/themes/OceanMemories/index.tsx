@@ -65,7 +65,7 @@ function OceanPhoto({ item, index, total, activePhotoId, setActivePhotoId }: any
       >
         <mesh>
           <planeGeometry args={[width, height]} />
-          <meshBasicMaterial map={texture} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+          <meshBasicMaterial map={texture as any} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
         </mesh>
         
         {/* Wooden Frame */}

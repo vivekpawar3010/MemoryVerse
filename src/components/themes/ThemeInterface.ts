@@ -5,4 +5,5 @@ export interface ThemeProps {
   isLowEndDevice?: boolean;
   activePhotoId: string | null;
   setActivePhotoId: (id: string | null) => void;
+  isAdminEditMode?: boolean;
 }

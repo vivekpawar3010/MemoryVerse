@@ -4,6 +4,8 @@ import { Users, Image as ImageIcon, Video, Quote, Search, RefreshCw, Plus, Layer
 import { useGroups, useDashboardSummary } from '../../hooks/useAdminData';
 import { Group } from '../../types';
 import { apiService } from '../../services/api';
+import { ConfirmModal } from '../ui/ConfirmModal';
+import { useToast, Toast } from '../ui/Toast';
 
 interface GroupListProps {
   onSelectGroup: (groupId: string) => void;
@@ -15,19 +17,27 @@ export const GroupList: React.FC<GroupListProps> = ({ onSelectGroup, onEditGroup
   const { data: groups, isLoading: loadingGroups, refetch: refetchGroups, isFetching } = useGroups();
   const { data: summary, isLoading: loadingSummary } = useDashboardSummary();
   const [searchQuery, setSearchQuery] = useState('');
+  const [groupToDelete, setGroupToDelete] = useState<{ id: string, name: string } | null>(null);
+  const { toast, showToast, hideToast } = useToast();
 
   const filteredGroups = (groups || []).filter(g => {
     const q = searchQuery.toLowerCase();
     return g.groupName.toLowerCase().includes(q) || (g.memoryId ?? '').toLowerCase().includes(q);
   });
 
-  const handleDeleteGroup = async (id: string, name: string) => {
-    if (!window.confirm(`Delete group "${name}"? This permanently removes all photos, videos, and quotes.`)) return;
+  const handleDeleteGroup = (id: string, name: string) => {
+    setGroupToDelete({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!groupToDelete) return;
     try {
-      await apiService.deleteGroup(id);
+      await apiService.deleteGroup(groupToDelete.id);
       refetchGroups();
+      setGroupToDelete(null);
+      showToast('Group deleted successfully', 'success');
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Failed to delete group');
+      showToast(e instanceof Error ? e.message : 'Failed to delete group', 'error');
     }
   };
 
@@ -135,6 +145,17 @@ export const GroupList: React.FC<GroupListProps> = ({ onSelectGroup, onEditGroup
           </div>
         )}
       </div>
+
+      <ConfirmModal 
+        isOpen={!!groupToDelete}
+        title="Delete Group"
+        message={`Delete group "${groupToDelete?.name}"? This permanently removes all photos, videos, and quotes.`}
+        confirmText="Delete Group"
+        onConfirm={confirmDelete}
+        onCancel={() => setGroupToDelete(null)}
+      />
+
+      <Toast toast={toast} onClose={hideToast} />
     </motion.div>
   );
 };

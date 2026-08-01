@@ -29,19 +29,21 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
     setError(null);
 
     try {
+      // Use Supabase Auth — sets the session so all DB requests go as 'authenticated'
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
       });
 
-      if (authError || !data.session) {
-        throw new Error('Invalid administrator email or password.');
-      }
+      if (authError) throw authError;
+      if (!data.session) throw new Error('No session returned. Please try again.');
 
-      onLoginSuccess(data.user.email ?? email);
+      onLoginSuccess(data.user?.email ?? email.trim().toLowerCase());
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message);
+        setError(err.message.includes('Invalid login') 
+          ? 'Invalid administrator email or password.'
+          : err.message);
       } else {
         setError('Authentication failed.');
       }
@@ -49,6 +51,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
       setLoading(false);
     }
   };
+
 
   return (
     <div className="relative min-h-screen w-full bg-[#050816] text-white flex flex-col items-center justify-between p-4 sm:p-6 md:p-10 font-sans-clean overflow-hidden select-none">

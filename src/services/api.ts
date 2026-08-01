@@ -29,6 +29,7 @@ function rowToGroup(row: Record<string, unknown>): Group {
     allowDownload: (row.allow_download as boolean) ?? false,
     allowShare: (row.allow_share as boolean) ?? false,
     showWatermark: (row.show_watermark as boolean) ?? true,
+    allowAudioChange: (row.allow_audio_change as boolean) ?? true,
     createdBy: 'admin@memoryverse.com',
     members: [],
     memberCount: 0,
@@ -210,17 +211,20 @@ export const apiService = {
     let { data, error } = await supabase
       .from('memory_groups')
       .select('*')
-      .eq('status', 'ACTIVE')
       .eq('memory_id', 'GLOBAL_FOR_ALL')
       .limit(1);
 
-    if (error || !data || data.length === 0) {
-      // Create it if it doesn't exist
-      const newGroupId = await apiService.ensureForAllGroup();
-      // Fetch it again
-      const newRes = await supabase.from('memory_groups').select('*').eq('id', newGroupId).single();
-      if (newRes.error || !newRes.data) throw new Error('Failed to load global group');
-      return apiService.fetchGroupMediaAndAccess(newRes.data);
+    if (error) {
+      console.error('[getDefaultForPublicJourney] Supabase error:', error);
+    }
+
+    if (!data || data.length === 0) {
+      const forAllId = await apiService.ensureForAllGroup();
+      const res = await supabase.from('memory_groups').select('*').eq('id', forAllId).single();
+      if (res.data) {
+        return apiService.fetchGroupMediaAndAccess(res.data);
+      }
+      throw new Error('Failed to create or load public journey group.');
     }
 
     return apiService.fetchGroupMediaAndAccess(data[0]);
@@ -253,7 +257,25 @@ export const apiService = {
       .select('id')
       .single();
     
-    if (error || !newGroup) throw new Error('Failed to create For All group');
+    if (error) {
+      console.error('[ensureForAllGroup] Supabase insert error:', error);
+      // If the insert failed due to a race condition (duplicate memory_id), fetch the existing group
+      if (
+        error.code === '23505' ||
+        (error.message && error.message.toLowerCase().includes('duplicate'))
+      ) {
+        const { data: existing } = await supabase
+          .from('memory_groups')
+          .select('id')
+          .eq('memory_id', 'GLOBAL_FOR_ALL')
+          .limit(1);
+        if (existing && existing.length > 0) {
+          return existing[0].id;
+        }
+      }
+      // RLS or other DB error — surface the real message
+      throw new Error(`Failed to create For All group: ${error.message} (code: ${error.code})`);
+    }
     return newGroup.id;
   },
 
@@ -298,6 +320,21 @@ export const apiService = {
         .limit(1),
     ]);
 
+    // Helper to map 3D fields
+    const map3DFields = (r: any) => ({
+      positionX: r.position_x ?? 0,
+      positionY: r.position_y ?? 0,
+      positionZ: r.position_z ?? 0,
+      rotationX: r.rotation_x ?? 0,
+      rotationY: r.rotation_y ?? 0,
+      rotationZ: r.rotation_z ?? 0,
+      scale: r.scale ?? 1,
+      frameStyle: r.frame_style ?? 'glass',
+      glowStrength: r.glow_strength ?? 1,
+      animationType: r.animation_type ?? 'float',
+      coverPhotoUrl: r.theme_settings?.coverPhotoUrl ?? undefined,
+    });
+
     const photos: PhotoItem[] = (photosRes.data ?? []).map((r) => ({
       id: r.id,
       groupId: r.group_id,
@@ -307,6 +344,7 @@ export const apiService = {
       animationStyle: r.animation_style ?? undefined,
       date: r.date ?? undefined,
       location: r.location ?? undefined,
+      ...map3DFields(r),
       createdAt: r.created_at,
     }));
 
@@ -316,6 +354,7 @@ export const apiService = {
       videoUrl: r.video_url,
       title: r.title ?? undefined,
       displayOrder: r.display_order ?? 0,
+      ...map3DFields(r),
       createdAt: r.created_at,
     }));
 
@@ -326,6 +365,7 @@ export const apiService = {
       author: r.author ?? '',
       displayOrder: r.display_order ?? 0,
       themeColor: r.theme_color ?? undefined,
+      ...map3DFields(r),
       createdAt: r.created_at,
     }));
 
@@ -376,31 +416,45 @@ export const apiService = {
       supabase.from('final_messages').select('*').eq('group_id', groupId).limit(1),
     ]);
 
-    const photos: PhotoItem[] = (photosRes.data ?? []).map((r) => ({
+    const mapBaseProps = (r: any) => ({
       id: r.id,
       groupId: r.group_id,
+      displayOrder: r.display_order ?? 0,
+      positionX: r.position_x ?? 0,
+      positionY: r.position_y ?? 0,
+      positionZ: r.position_z ?? 0,
+      rotationX: r.rotation_x ?? 0,
+      rotationY: r.rotation_y ?? 0,
+      rotationZ: r.rotation_z ?? 0,
+      scale: r.scale ?? 1,
+      frameStyle: r.frame_style ?? 'glass',
+      glowStrength: r.glow_strength ?? 1,
+      animationType: r.animation_type ?? 'float',
+      layerIndex: r.layer_index ?? 0,
+      isVisible: r.is_visible ?? true,
+      animationSettings: r.animation_settings ?? {},
+      audioSettings: r.audio_settings ?? {},
+      themeSettings: r.theme_settings ?? {},
+      coverPhotoUrl: r.theme_settings?.coverPhotoUrl ?? undefined,
+      createdAt: r.created_at,
+    });
+
+    const photos: PhotoItem[] = (photosRes.data ?? []).map((r) => ({
+      ...mapBaseProps(r),
       imageUrl: r.image_url,
       caption: r.caption ?? '',
-      displayOrder: r.display_order ?? 0,
-      createdAt: r.created_at,
     }));
 
     const videos: VideoItem[] = (videosRes.data ?? []).map((r) => ({
-      id: r.id,
-      groupId: r.group_id,
+      ...mapBaseProps(r),
       videoUrl: r.video_url,
       title: r.title ?? undefined,
-      displayOrder: r.display_order ?? 0,
-      createdAt: r.created_at,
     }));
 
     const quotes: QuoteItem[] = (quotesRes.data ?? []).map((r) => ({
-      id: r.id,
-      groupId: r.group_id,
+      ...mapBaseProps(r),
       quote: r.quote,
       author: r.author ?? '',
-      displayOrder: r.display_order ?? 0,
-      createdAt: r.created_at,
     }));
 
     const fmRow = finalMsgRes.data && finalMsgRes.data.length > 0 ? finalMsgRes.data[0] : null;
@@ -515,6 +569,7 @@ export const apiService = {
     allowDownload?: boolean;
     allowShare?: boolean;
     showWatermark?: boolean;
+    allowAudioChange?: boolean;
     members?: string[];
     memberCount?: number;
   }): Promise<Group> => {
@@ -601,6 +656,7 @@ export const apiService = {
       allowDownload?: boolean;
       allowShare?: boolean;
       showWatermark?: boolean;
+    allowAudioChange?: boolean;
       status?: 'ACTIVE' | 'ARCHIVED' 
     }
   ): Promise<Group> => {
@@ -616,6 +672,7 @@ export const apiService = {
     if (data.allowDownload !== undefined) updates.allow_download = data.allowDownload;
     if (data.allowShare !== undefined) updates.allow_share = data.allowShare;
     if (data.showWatermark !== undefined) updates.show_watermark = data.showWatermark;
+    if (data.allowAudioChange !== undefined) updates.allow_audio_change = data.allowAudioChange;
     if (data.status) updates.status = data.status;
     if (data.password) updates.password_hash = data.password;
 
@@ -692,6 +749,64 @@ export const apiService = {
 
   deletePhoto: async (photoId: string): Promise<void> => {
     const { error } = await supabase.from('photos').delete().eq('id', photoId);
+    if (error) throw new Error(error.message);
+  },
+
+  updateMemoryItem3DProps: async (
+    table: 'photos' | 'videos' | 'quotes', 
+    itemId: string, 
+    props: Partial<{
+      positionX: number;
+      positionY: number;
+      positionZ: number;
+      rotationX: number;
+      rotationY: number;
+      rotationZ: number;
+      scale: number;
+      frameStyle: string;
+      glowStrength: number;
+      animationType: string;
+      layerIndex: number;
+      isVisible: boolean;
+      animationSettings: Record<string, any>;
+      audioSettings: Record<string, any>;
+      themeSettings: Record<string, any>;
+      textContent: string;
+      titleOrAuthor: string;
+      displayOrder: number;
+    }>
+  ): Promise<void> => {
+    const updateData: any = {};
+    if (props.positionX !== undefined) updateData.position_x = props.positionX;
+    if (props.positionY !== undefined) updateData.position_y = props.positionY;
+    if (props.positionZ !== undefined) updateData.position_z = props.positionZ;
+    if (props.rotationX !== undefined) updateData.rotation_x = props.rotationX;
+    if (props.rotationY !== undefined) updateData.rotation_y = props.rotationY;
+    if (props.rotationZ !== undefined) updateData.rotation_z = props.rotationZ;
+    if (props.scale !== undefined) updateData.scale = props.scale;
+    if (props.frameStyle !== undefined) updateData.frame_style = props.frameStyle;
+    if (props.glowStrength !== undefined) updateData.glow_strength = props.glowStrength;
+    if (props.animationType !== undefined) updateData.animation_type = props.animationType;
+    if (props.layerIndex !== undefined) updateData.layer_index = props.layerIndex;
+    if (props.isVisible !== undefined) updateData.is_visible = props.isVisible;
+    if (props.animationSettings !== undefined) updateData.animation_settings = props.animationSettings;
+    if (props.audioSettings !== undefined) updateData.audio_settings = props.audioSettings;
+    if (props.themeSettings !== undefined) updateData.theme_settings = props.themeSettings;
+    if (props.displayOrder !== undefined) updateData.display_order = props.displayOrder;
+
+    if (props.textContent !== undefined) {
+      if (table === 'photos') updateData.caption = props.textContent;
+      if (table === 'quotes') updateData.quote = props.textContent;
+    }
+    
+    if (props.titleOrAuthor !== undefined) {
+      if (table === 'videos') updateData.title = props.titleOrAuthor;
+      if (table === 'quotes') updateData.author = props.titleOrAuthor;
+    }
+
+    if (Object.keys(updateData).length === 0) return;
+
+    const { error } = await supabase.from(table).update(updateData).eq('id', itemId);
     if (error) throw new Error(error.message);
   },
 
@@ -816,4 +931,35 @@ export const apiService = {
     }
     return true;
   },
+
+  // -------------------------------------------------------------------------
+  // Get Visitor Logs (for analytics)
+  // -------------------------------------------------------------------------
+  getVisitorLogs: async (): Promise<{
+    id: string;
+    visitorName: string;
+    groupName: string;
+    groupId: string;
+    visitedAt: string;
+  }[]> => {
+    const { data, error } = await supabase
+      .from('visitor_logs')
+      .select('id, visitor_name, visited_at, group_id, memory_groups(group_name)')
+      .order('visited_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('[getVisitorLogs] error:', error);
+      return [];
+    }
+
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      visitorName: row.visitor_name,
+      groupId: row.group_id,
+      groupName: row.memory_groups?.group_name ?? 'Unknown Group',
+      visitedAt: row.visited_at,
+    }));
+  },
 };
+

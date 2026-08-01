@@ -7,6 +7,8 @@ export interface AdminUser {
 export interface ThemeSettings {
   textColor?: string;
   backgroundColor?: string;
+  enabledAnimations?: string[];
+  [key: string]: any;
 }
 
 export interface Group {
@@ -25,6 +27,7 @@ export interface Group {
   allowDownload?: boolean;
   allowShare?: boolean;
   showWatermark?: boolean;
+  allowAudioChange?: boolean;
   createdBy?: string;
   members?: string[];
   memberCount?: number;
@@ -38,35 +41,46 @@ export interface Group {
   finalMessageText?: string;
 }
 
-export interface PhotoItem {
+export interface BaseMemoryItem {
   id: string;
   groupId: string;
+  displayOrder: number;
+  coverPhotoUrl?: string;
+  positionX?: number;
+  positionY?: number;
+  positionZ?: number;
+  rotationX?: number;
+  rotationY?: number;
+  rotationZ?: number;
+  scale?: number;
+  frameStyle?: string;
+  glowStrength?: number;
+  animationType?: string;
+  layerIndex?: number;
+  isVisible?: boolean;
+  animationSettings?: Record<string, any>;
+  audioSettings?: Record<string, any>;
+  themeSettings?: Record<string, any>;
+  createdAt?: string;
+}
+
+export interface PhotoItem extends BaseMemoryItem {
   imageUrl: string;
   caption: string;
-  displayOrder: number;
   animationStyle?: string;
   date?: string;
   location?: string;
-  createdAt?: string;
 }
 
-export interface VideoItem {
-  id: string;
-  groupId: string;
+export interface VideoItem extends BaseMemoryItem {
   videoUrl: string;
   title?: string;
-  displayOrder: number;
-  createdAt?: string;
 }
 
-export interface QuoteItem {
-  id: string;
-  groupId: string;
+export interface QuoteItem extends BaseMemoryItem {
   quote: string;
   author: string;
-  displayOrder: number;
   themeColor?: string;
-  createdAt?: string;
 }
 
 export interface FinalMessageItem {
@@ -98,6 +112,7 @@ export interface VisitorGroupAccess {
   allowDownload?: boolean;
   allowShare?: boolean;
   showWatermark?: boolean;
+  allowAudioChange?: boolean;
   unlockedAt: string;
   photos?: PhotoItem[];
   videos?: VideoItem[];

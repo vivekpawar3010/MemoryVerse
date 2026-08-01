@@ -1,12 +1,16 @@
-import React, { Suspense, useMemo, useState } from 'react';
+import React, { Suspense, useMemo, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { ScrollControls, useProgress } from '@react-three/drei';
-import { ArrowLeft, Settings2 } from 'lucide-react';
+import { ScrollControls, useProgress, useTexture } from '@react-three/drei';
+import { ArrowLeft, Settings2, Play, Pause } from 'lucide-react';
 import { VisitorGroupAccess } from '../types';
 import { AudioManager } from './AudioManager';
 import { ImageViewer } from './ImageViewer';
 import { ProtectionWrapper } from './ProtectionWrapper';
 import { THEME_REGISTRY } from './themes/ThemeRegistry';
+import { FloatingEffects } from './FloatingEffects';
+import { AutoScroller } from './AutoScroller';
+import { BACKGROUND_AUDIO } from './themes/AudioRegistry';
+import { Music } from 'lucide-react';
 
 // Lazy load all themes
 const themeComponents: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
@@ -45,7 +49,18 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
   const [localThemeId, setLocalThemeId] = useState(initialThemeId);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const [visitorAudioUrl, setVisitorAudioUrl] = useState<string | null>(null);
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [customAudioInput, setCustomAudioInput] = useState("");
   
+  // Preload all textures so the 3D canvas doesn't stutter on scroll
+  useEffect(() => {
+    if (data.photos?.length) {
+      useTexture.preload(data.photos.map(p => p.imageUrl));
+    }
+  }, [data.photos]);
+
   // Determine if it's a low end device
   const isLowEndDevice = useMemo(() => {
     const nav = navigator as any;
@@ -67,9 +82,12 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
     <ProtectionWrapper groupName={data.groupName} memoryId={data.memoryId} showWatermark={data.showWatermark}>
       <div className="w-full h-screen overflow-hidden relative" style={{ backgroundColor: bgColor, color: textColor }}>
         
+        {/* Ambient Effects */}
+        <FloatingEffects />
+
         {/* Global Audio Manager */}
         <AudioManager 
-          ambientUrl={data.ambientAudio || data.audioUrl} 
+          ambientUrl={visitorAudioUrl || data.ambientAudio || data.audioUrl} 
           endingUrl={data.endingAudio}
           isEnding={false} // We can tie this to scroll progress later
         />
@@ -79,7 +97,7 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
           <div className="pointer-events-auto">
             <button 
               onClick={onBack} 
-              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer backdrop-blur-md"
+              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer backdrop-blur-md animate-in fade-in"
               style={{ backgroundColor: `${primaryColor}40`, border: `1px solid ${primaryColor}80`, color: textColor }}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -93,18 +111,39 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
             </p>
           </div>
           
-          <div className="pointer-events-auto relative">
-            <button 
-              onClick={() => setShowThemeMenu(!showThemeMenu)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer shadow-lg backdrop-blur-md"
-              style={{ backgroundColor: `${primaryColor}40`, border: `1px solid ${primaryColor}80`, color: textColor }}
-            >
-              <Settings2 className="w-4 h-4" />
-              <span>Change Theme</span>
-            </button>
+          <div className="pointer-events-auto flex flex-col items-end gap-2 relative">
+            <div className="flex items-center">
+              <button 
+                onClick={() => setIsAutoScrolling(!isAutoScrolling)}
+                className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-4 sm:py-2 rounded-full text-sm font-semibold transition-all cursor-pointer shadow-lg backdrop-blur-md mr-2"
+                style={{ backgroundColor: `${primaryColor}40`, border: `1px solid ${primaryColor}80`, color: textColor }}
+              >
+                {isAutoScrolling ? <Pause className="w-4 h-4 sm:mr-2" /> : <Play className="w-4 h-4 sm:mr-2" />}
+                <span className="hidden sm:inline">{isAutoScrolling ? 'Pause Tour' : 'Auto Tour'}</span>
+              </button>
+              <button 
+                onClick={() => setShowThemeMenu(!showThemeMenu)}
+                className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-4 sm:py-2 rounded-full text-sm font-semibold transition-all cursor-pointer shadow-lg backdrop-blur-md animate-in fade-in"
+                style={{ backgroundColor: `${primaryColor}40`, border: `1px solid ${primaryColor}80`, color: textColor }}
+              >
+                <Settings2 className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Change Theme</span>
+              </button>
+            </div>
+            
+            {data.allowAudioChange !== false && (
+              <button 
+                onClick={() => setShowAudioSettings(true)}
+                className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-4 sm:py-2 rounded-full text-sm font-semibold transition-all cursor-pointer shadow-lg backdrop-blur-md animate-in fade-in"
+                style={{ backgroundColor: `${primaryColor}40`, border: `1px solid ${primaryColor}80`, color: textColor }}
+              >
+                <Music className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Audio Settings</span>
+              </button>
+            )}
             
             {showThemeMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl py-2 z-50">
+              <div className="absolute right-0 mt-12 w-64 bg-black/70 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl py-2 z-50 animate-in slide-in-from-top-2 duration-200">
                 <div className="px-4 py-2 border-b border-white/10 mb-2">
                   <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Select Environment</p>
                 </div>
@@ -116,7 +155,7 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
                         setLocalThemeId(t.id);
                         setShowThemeMenu(false);
                       }}
-                      className={`w-full text-left px-4 py-3 text-sm transition-colors text-white/80 hover:bg-white/10`}
+                      className="w-full text-left px-4 py-3 text-sm transition-colors text-white/80 hover:bg-white/10"
                       style={localThemeId === t.id ? { backgroundColor: `${primaryColor}60`, color: '#ffffff' } : {}}
                     >
                       <p className="font-semibold leading-tight">{t.name}</p>
@@ -143,6 +182,7 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
           <Suspense fallback={null}>
             {/* ScrollControls manages GSAP-like scroll timeline mapping 0-1 */}
             <ScrollControls pages={pages} damping={0.2} distance={1.5}>
+              <AutoScroller isPlaying={isAutoScrolling} />
               <ThemeComponent 
                 data={data} 
                 isLowEndDevice={isLowEndDevice}
@@ -159,6 +199,68 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
         </Suspense>
 
       </div>
+    
+        {/* Audio Settings Modal */}
+        {showAudioSettings && (
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-[#090d21] border border-white/10 rounded-2xl max-w-md w-full p-6 text-white space-y-6">
+              <h2 className="font-cinzel text-xl font-bold">Background Audio</h2>
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {BACKGROUND_AUDIO.map(track => (
+                  <button
+                    key={track.id}
+                    onClick={() => {
+                      if (track.id === 'custom_upload') {
+                        // handled by text input below
+                      } else {
+                        setVisitorAudioUrl(track.url);
+                        setShowAudioSettings(false);
+                      }
+                    }}
+                    className={`w-full flex flex-col items-start p-4 rounded-xl border transition-all cursor-pointer ${
+                      (visitorAudioUrl === track.url || (visitorAudioUrl === null && track.url === (data.ambientAudio || data.audioUrl)))
+                        ? 'border-indigo-500 bg-indigo-500/20' 
+                        : 'border-white/10 hover:bg-white/5'
+                    }`}
+                  >
+                    <span className="font-bold text-sm">{track.name}</span>
+                    <span className="text-xs text-slate-400 mt-1">{track.description}</span>
+                  </button>
+                ))}
+              </div>
+              <div>
+                <span className="text-xs text-slate-400 mb-2 block">Custom Audio URL:</span>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={customAudioInput}
+                    onChange={e => setCustomAudioInput(e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                  />
+                  <button
+                    onClick={() => {
+                      if (customAudioInput) {
+                        setVisitorAudioUrl(customAudioInput);
+                        setShowAudioSettings(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold"
+                  >
+                    Set
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAudioSettings(false)}
+                className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 font-bold tracking-wider"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
     </ProtectionWrapper>
   );
 };

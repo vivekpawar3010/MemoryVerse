@@ -11,18 +11,27 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const navigate = useNavigate();
+  const [adminLoggedIn, setAdminLoggedIn] = useState(false);
 
   // Restore Supabase session on mount + listen for auth changes
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
-      if (s?.user?.email) setAdminEmail(s.user.email);
+      if (s?.user?.email) {
+        setAdminEmail(s.user.email);
+        setAdminLoggedIn(true);
+      }
       setSessionLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
-      if (s?.user?.email) setAdminEmail(s.user.email);
+      if (s?.user?.email) {
+        setAdminEmail(s.user.email);
+        setAdminLoggedIn(true);
+      } else {
+        setAdminLoggedIn(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -30,12 +39,14 @@ export default function App() {
 
   const handleAdminLoginSuccess = (email: string) => {
     setAdminEmail(email);
+    setAdminLoggedIn(true);
     navigate('/admin');
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSession(null);
+    setAdminLoggedIn(false);
     navigate('/');
   };
 
@@ -47,7 +58,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         
         <Route path="/admin/*" element={
-          session ? (
+          adminLoggedIn ? (
             <AdminDashboard
               adminEmail={adminEmail}
               onLogout={handleLogout}
@@ -59,6 +70,7 @@ export default function App() {
             />
           )
         } />
+
         
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />

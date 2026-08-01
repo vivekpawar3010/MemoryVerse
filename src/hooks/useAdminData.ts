@@ -30,3 +30,12 @@ export const useLibraryPhotos = () => {
     queryFn: () => apiService.getAllPhotos(),
   });
 };
+
+export const useVisitorLogs = () => {
+  return useQuery({
+    queryKey: ['visitorLogs'],
+    queryFn: () => apiService.getVisitorLogs(),
+    refetchInterval: 30_000, // auto-refresh every 30s
+  });
+};
+

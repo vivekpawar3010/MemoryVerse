@@ -108,6 +108,8 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ photos, initialActiveI
                 alt={currentPhoto.caption}
                 className="max-w-full max-h-full object-contain shadow-2xl rounded-sm"
                 draggable={false} // Disable native drag
+                loading="lazy"
+                decoding="async"
               />
               
               {/* Caption Overlay inside viewer */}
