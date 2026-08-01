@@ -13,18 +13,9 @@ import { BACKGROUND_AUDIO, ENDING_AUDIO, SOUND_EFFECTS, getStoredCustomTracks, s
 import { uploadMediaToSupabaseBucket } from '../lib/supabase';
 import { ThreeErrorBoundary } from './ui/ThreeErrorBoundary';
 import { Music, Upload, Loader2 } from 'lucide-react';
+import { LAZY_THEME_COMPONENTS } from './themes/LazyThemeRegistry';
 
-// Lazy load all themes
-const themeComponents: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
-  'CinematicSpace': React.lazy(() => import('./themes/CinematicSpace')),
-  'FloatingMuseum': React.lazy(() => import('./themes/FloatingMuseum')),
-  'VintageBook': React.lazy(() => import('./themes/VintageBook')),
-  'DreamClouds': React.lazy(() => import('./themes/DreamClouds')),
-  'OceanMemories': React.lazy(() => import('./themes/OceanMemories')),
-  'CampfireNight': React.lazy(() => import('./themes/CampfireNight')),
-  'CyberFuture': React.lazy(() => import('./themes/CyberFuture')),
-  'GoldenHour': React.lazy(() => import('./themes/GoldenHour')),
-};
+const themeComponents = LAZY_THEME_COMPONENTS;
 
 interface Props {
   data: VisitorGroupAccess;

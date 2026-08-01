@@ -4,27 +4,9 @@ import { Monitor, Tablet, Smartphone, Maximize, ZoomIn, ZoomOut, Save, RotateCcw
 import { Canvas, useFrame } from '@react-three/fiber';
 import { ScrollControls, useScroll } from '@react-three/drei';
 import { ThreeErrorBoundary } from '../ui/ThreeErrorBoundary';
+import { LAZY_THEME_COMPONENTS } from '../themes/LazyThemeRegistry';
 
-// Theme imports
-import CinematicSpaceTheme from '../themes/CinematicSpace';
-import FloatingMuseumTheme from '../themes/FloatingMuseum';
-import VintageBookTheme from '../themes/VintageBook';
-import DreamCloudsTheme from '../themes/DreamClouds';
-import OceanMemoriesTheme from '../themes/OceanMemories';
-import CampfireNightTheme from '../themes/CampfireNight';
-import CyberFutureTheme from '../themes/CyberFuture';
-import GoldenHourTheme from '../themes/GoldenHour';
-
-const THEME_COMPONENTS: Record<string, React.ComponentType<any>> = {
-  'CinematicSpace': CinematicSpaceTheme,
-  'FloatingMuseum': FloatingMuseumTheme,
-  'VintageBook': VintageBookTheme,
-  'DreamClouds': DreamCloudsTheme,
-  'OceanMemories': OceanMemoriesTheme,
-  'CampfireNight': CampfireNightTheme,
-  'CyberFuture': CyberFutureTheme,
-  'GoldenHour': GoldenHourTheme,
-};
+const THEME_COMPONENTS = LAZY_THEME_COMPONENTS;
 
 // ScrollBridge connects bottom progress bar slider, auto-tour, and wheel scrolling to R3F's useScroll hook
 const ScrollBridge: React.FC<{
@@ -84,7 +66,7 @@ export const PreviewRenderer: React.FC = () => {
   const [targetProgress, setTargetProgress] = useState<number | null>(null);
 
   const activeThemeId = groupDetails?.theme || 'CinematicSpace';
-  const ThemeComponent = THEME_COMPONENTS[activeThemeId] || CinematicSpaceTheme;
+  const ThemeComponent = THEME_COMPONENTS[activeThemeId] || THEME_COMPONENTS['CinematicSpace'];
 
   const pages = Math.max(3, items.length / 2);
 
