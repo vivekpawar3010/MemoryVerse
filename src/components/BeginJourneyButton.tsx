@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
-import { Compass, Sparkles, X, Heart } from 'lucide-react';
+import { Compass, Sparkles, X, Heart, Lock } from 'lucide-react';
 
 interface BeginJourneyButtonProps {
   isVisible: boolean;
+  disabled?: boolean;
   onPlaySound?: () => void;
   onContinue?: () => void;
 }
 
 export const BeginJourneyButton: React.FC<BeginJourneyButtonProps> = ({
   isVisible,
+  disabled = false,
   onPlaySound,
   onContinue,
 }) => {
@@ -19,6 +21,8 @@ export const BeginJourneyButton: React.FC<BeginJourneyButtonProps> = ({
   if (!isVisible) return null;
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+
     // 1. Play sound if available
     if (onPlaySound) {
       onPlaySound();
@@ -48,25 +52,50 @@ export const BeginJourneyButton: React.FC<BeginJourneyButtonProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 1.2, delay: 2.2, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-10 z-20"
+        transition={{ duration: 1.2, delay: 1.5, ease: [0.16, 1, 0.3, 1] }}
+        className="mt-6 sm:mt-8 z-20 flex flex-col items-center"
       >
         <button
           onClick={handleClick}
-          className="group relative inline-flex items-center justify-center px-6 py-3 sm:px-10 sm:py-4 overflow-hidden rounded-full font-sans-clean font-medium tracking-widest uppercase text-xs text-white transition-all duration-300 bg-white/5 backdrop-blur-md border border-white/20 hover:bg-white/10 hover:border-white/40 hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95 cursor-pointer"
+          disabled={disabled}
+          className={`group relative inline-flex items-center justify-center px-6 py-3 sm:px-10 sm:py-4 overflow-hidden rounded-full font-sans-clean font-medium tracking-widest uppercase text-xs transition-all duration-300 backdrop-blur-md border ${
+            disabled
+              ? 'bg-white/[0.03] border-white/10 text-slate-500 cursor-not-allowed opacity-60 shadow-none'
+              : 'bg-gradient-to-r from-emerald-500/20 via-amber-500/20 to-indigo-500/20 border-emerald-400/50 hover:border-emerald-300 text-white hover:scale-105 active:scale-95 shadow-[0_0_25px_rgba(52,211,153,0.3)] hover:shadow-[0_0_40px_rgba(52,211,153,0.6)] cursor-pointer'
+          }`}
         >
-          {/* Animated background subtle sheen */}
-          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          {/* Animated background subtle sheen when enabled */}
+          {!disabled && (
+            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          )}
 
           {/* Icon & Label */}
           <div className="relative flex items-center space-x-3 z-10">
-            <Compass className="w-4 h-4 text-white/80 transition-transform duration-700 ease-out group-hover:rotate-180" />
-            <span className="tracking-[0.2em] font-medium text-white">
+            {disabled ? (
+              <Lock className="w-4 h-4 text-slate-500 shrink-0" />
+            ) : (
+              <Compass className="w-4 h-4 text-emerald-300 transition-transform duration-700 ease-out group-hover:rotate-180 shrink-0" />
+            )}
+            
+            <span className={`tracking-[0.2em] font-bold ${disabled ? 'text-slate-500' : 'text-emerald-100'}`}>
               Begin the Journey
             </span>
-            <Sparkles className="w-3.5 h-3.5 text-white/80 opacity-80 group-hover:opacity-100 transition-opacity animate-pulse" />
+
+            {disabled ? (
+              <span className="text-[10px] text-amber-300/80 font-normal uppercase tracking-normal hidden sm:inline">
+                (Enter Name First)
+              </span>
+            ) : (
+              <Sparkles className="w-3.5 h-3.5 text-emerald-300 opacity-90 group-hover:opacity-100 transition-opacity animate-pulse shrink-0" />
+            )}
           </div>
         </button>
+
+        {disabled && (
+          <p className="mt-2 text-[11px] text-amber-300/70 font-semibold tracking-wider animate-pulse">
+            🔒 Enter your name above to unlock the journey
+          </p>
+        )}
       </motion.div>
 
       {/* Modal / Memory Reflection Pop-over (Keeps user on Page 1 strictly without routing) */}

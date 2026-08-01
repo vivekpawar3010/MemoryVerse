@@ -290,6 +290,7 @@ export const LandingPage: React.FC = () => {
           <div className="flex items-center justify-center mt-3">
             <BeginJourneyButton 
               isVisible={isLoaded} 
+              disabled={!visitorName.trim()}
               onPlaySound={playSpaceSoundEffect}
               onContinue={handleContinueJourney} 
             />

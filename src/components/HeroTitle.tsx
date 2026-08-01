@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, User, Heart } from 'lucide-react';
 
 interface HeroTitleProps {
@@ -57,21 +57,7 @@ export const HeroTitle: React.FC<HeroTitleProps> = ({
 
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 max-w-3xl mx-auto z-10 select-none">
-      {/* Decorative top badge */}
-      <motion.div
-        initial={{ opacity: 0, y: -15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="flex items-center space-x-2 mb-3 px-3.5 py-1 rounded-full bg-white/[0.04] border border-amber-300/20 backdrop-blur-md shadow-[0_0_15px_rgba(252,211,77,0.1)] pointer-events-auto"
-      >
-        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-        <span className="font-sans-clean text-[11px] uppercase tracking-[0.2em] text-amber-200/90 font-semibold">
-          A Celestial Celebration
-        </span>
-        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-      </motion.div>
-
-      {/* Main Title: Happy Friendship Day (compact responsive size to prevent overflow) */}
+      {/* Main Title: Happy Friendship Day */}
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -84,6 +70,23 @@ export const HeroTitle: React.FC<HeroTitleProps> = ({
             Friendship Day
           </span>
         </h1>
+
+        {/* Dynamic Name Display below Happy Friendship Day */}
+        <AnimatePresence>
+          {visitorName.trim() && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.9 }}
+              transition={{ duration: 0.4 }}
+              className="mt-3"
+            >
+              <h2 className="font-cinzel text-2xl sm:text-4xl font-bold tracking-wider bg-gradient-to-r from-amber-200 via-emerald-300 to-indigo-200 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(52,211,153,0.6)]">
+                ✨ {visitorName.trim()} ✨
+              </h2>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Soft background aura behind text */}
         <div className="absolute -inset-x-8 -inset-y-4 bg-gradient-to-r from-emerald-500/10 via-indigo-500/10 to-purple-500/10 blur-2xl rounded-full -z-10 pointer-events-none" />
