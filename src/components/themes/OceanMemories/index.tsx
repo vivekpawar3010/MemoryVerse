@@ -63,15 +63,15 @@ function OceanPhoto({ item, index, total, activePhotoId, setActivePhotoId }: any
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       >
-        <mesh>
+        <mesh position={[0, 0, 0.02]}>
           <planeGeometry args={[width, height]} />
-          <meshBasicMaterial map={texture as any} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+          <meshBasicMaterial map={texture as any} transparent={false} opacity={1} toneMapped={false} />
         </mesh>
         
         {/* Wooden Frame */}
-        <mesh position={[0, 0, -0.05]}>
-          <boxGeometry args={[width + 0.4, height + 0.4, 0.1]} />
-          <meshStandardMaterial color="#5c4033" roughness={0.8} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+        <mesh position={[0, 0, -0.03]}>
+          <boxGeometry args={[width + 0.4, height + 0.4, 0.06]} />
+          <meshStandardMaterial color="#5c4033" roughness={0.8} transparent={false} opacity={1} />
         </mesh>
         
         {isActive && item.caption && (

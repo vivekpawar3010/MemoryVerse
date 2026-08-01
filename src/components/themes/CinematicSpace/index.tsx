@@ -268,9 +268,9 @@ function MemoryNode({ item, index, isActive, onActivate }: any) {
       >
         {/* Photo Content */}
         {item.type === 'photo' && texture && (
-          <mesh position={[0, 0, 0]}>
+          <mesh position={[0, 0, 0.02]}>
             <planeGeometry args={[width, height]} />
-            <meshBasicMaterial map={texture as any} transparent opacity={1} />
+            <meshBasicMaterial map={texture as any} transparent={false} opacity={1} toneMapped={false} />
           </mesh>
         )}
 

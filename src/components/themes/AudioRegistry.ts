@@ -85,10 +85,20 @@ export const ENDING_AUDIO: AudioTrack[] = [
   }
 ];
 
+export const getStoredCustomTracks = (): AudioTrack[] => {
+  try {
+    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('custom_audio_tracks') : null;
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
 export const getAudioUrl = (id: string | undefined): string | null => {
   if (!id) return null;
-  if (id.startsWith('http') || id.startsWith('blob:')) return id;
-  const allTracks = [...BACKGROUND_AUDIO, ...SOUND_EFFECTS, ...ENDING_AUDIO];
+  if (id.startsWith('http') || id.startsWith('blob:') || id.startsWith('data:')) return id;
+  const customTracks = getStoredCustomTracks();
+  const allTracks = [...BACKGROUND_AUDIO, ...SOUND_EFFECTS, ...ENDING_AUDIO, ...customTracks];
   const track = allTracks.find(t => t.id === id);
   return track ? track.url : id;
 };

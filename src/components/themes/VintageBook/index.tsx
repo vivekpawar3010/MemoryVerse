@@ -70,7 +70,7 @@ function Page({ item, index, total, activePhotoId, setActivePhotoId }: any) {
         
         {/* Photo Print */}
         <mesh 
-          position={[0, 0.5, 0.01]}
+          position={[0, 0.5, 0.02]}
           onClick={(e) => {
             e.stopPropagation();
             setActivePhotoId(isActive ? null : item.id);
@@ -79,15 +79,7 @@ function Page({ item, index, total, activePhotoId, setActivePhotoId }: any) {
           onPointerOut={() => setHovered(false)}
         >
           <planeGeometry args={[width, height]} />
-          <meshStandardMaterial map={texture as any} roughness={0.8} />
-          
-          {/* Hover highlight */}
-          {hovered && !isActive && (
-            <mesh position={[0, 0, 0.01]}>
-              <planeGeometry args={[width + 0.1, height + 0.1]} />
-              <meshBasicMaterial color="#ffffff" transparent opacity={0.2} />
-            </mesh>
-          )}
+          <meshBasicMaterial map={texture as any} transparent={false} opacity={1} toneMapped={false} />
         </mesh>
         
         {/* Caption */}

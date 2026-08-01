@@ -71,21 +71,15 @@ function NeonPhoto({ item, index, total, activePhotoId, setActivePhotoId }: any)
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       >
-        <mesh>
+        <mesh position={[0, 0, 0.02]}>
           <planeGeometry args={[width, height]} />
-          <meshBasicMaterial map={texture as any} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
-        </mesh>
-        
-        {/* Hologram overlay/scanline simulation */}
-        <mesh position={[0, 0, 0.01]}>
-          <planeGeometry args={[width, height]} />
-          <meshBasicMaterial color={neonColor} transparent opacity={isAnyActive && !isActive ? 0.05 : 0.1} blending={THREE.AdditiveBlending} />
+          <meshBasicMaterial map={texture as any} transparent={false} opacity={1} toneMapped={false} />
         </mesh>
 
         {/* Neon Frame */}
-        <mesh position={[0, 0, -0.05]}>
-          <boxGeometry args={[width + 0.2, height + 0.2, 0.1]} />
-          <meshBasicMaterial color={neonColor} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+        <mesh position={[0, 0, -0.03]}>
+          <boxGeometry args={[width + 0.2, height + 0.2, 0.06]} />
+          <meshBasicMaterial color={neonColor} transparent={false} opacity={1} />
         </mesh>
         
         {isActive && item.caption && (

@@ -62,13 +62,15 @@ function CloudPhoto({ item, index, total, activePhotoId, setActivePhotoId }: any
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       >
-        <planeGeometry args={[width, height]} />
-        <meshBasicMaterial map={texture as any} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+        <mesh position={[0, 0, 0.02]}>
+          <planeGeometry args={[width, height]} />
+          <meshBasicMaterial map={texture as any} transparent={false} opacity={1} toneMapped={false} />
+        </mesh>
         
         {/* Soft white frame */}
-        <mesh position={[0, 0, -0.05]}>
-          <boxGeometry args={[width + 0.4, height + 0.4, 0.1]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+        <mesh position={[0, 0, -0.03]}>
+          <boxGeometry args={[width + 0.4, height + 0.4, 0.06]} />
+          <meshBasicMaterial color="#ffffff" transparent={false} opacity={1} />
         </mesh>
       </mesh>
     </Float>

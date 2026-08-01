@@ -74,19 +74,19 @@ function HangingPhoto({ item, index, total, activePhotoId, setActivePhotoId }: a
         {!isActive && (
           <mesh position={[0, height/2 + 1, 0]}>
             <cylinderGeometry args={[0.02, 0.02, 2]} />
-            <meshStandardMaterial color="#8b5a2b" roughness={0.9} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+            <meshStandardMaterial color="#8b5a2b" roughness={0.9} transparent={false} opacity={1} />
           </mesh>
         )}
 
-        <mesh>
+        <mesh position={[0, 0, 0.02]}>
           <planeGeometry args={[width, height]} />
-          <meshStandardMaterial map={texture as any} roughness={0.6} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+          <meshBasicMaterial map={texture as any} transparent={false} opacity={1} toneMapped={false} />
         </mesh>
         
         {/* Polaroid Frame */}
-        <mesh position={[0, -0.2, -0.05]}>
-          <boxGeometry args={[width + 0.4, height + 0.8, 0.1]} />
-          <meshStandardMaterial color="#f8f4e6" roughness={1} transparent opacity={isAnyActive && !isActive ? 0.1 : 1} />
+        <mesh position={[0, -0.2, -0.03]}>
+          <boxGeometry args={[width + 0.4, height + 0.8, 0.06]} />
+          <meshStandardMaterial color="#f8f4e6" roughness={1} transparent={false} opacity={1} />
         </mesh>
         
         {isActive && item.caption && (

@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useEditorStore } from '../../store/EditorStore';
-import { Layers, Volume2, Eye, EyeOff, Film, LayoutTemplate, Music, Play, Pause, Check, X, Sparkles } from 'lucide-react';
+import { Layers, Volume2, Eye, EyeOff, Film, LayoutTemplate, Music, Play, Pause, Check, X, Sparkles, Upload, Loader2 } from 'lucide-react';
 import { useToast, Toast } from '../ui/Toast';
-import { BACKGROUND_AUDIO, SOUND_EFFECTS, ENDING_AUDIO, AudioTrack } from '../themes/AudioRegistry';
+import { BACKGROUND_AUDIO, SOUND_EFFECTS, ENDING_AUDIO, AudioTrack, getStoredCustomTracks } from '../themes/AudioRegistry';
+import { uploadMediaToSupabaseBucket } from '../../lib/supabase';
 
 const RichTextArea = ({ value, onChange, label }: { value: string, onChange: (v: string) => void, label: string }) => {
   const insertText = (prefix: string, suffix: string) => {
@@ -241,9 +242,42 @@ export const PropertyPanel: React.FC = () => {
                 <h3 className="text-base font-bold text-white flex items-center gap-2 font-cinzel">
                   <Music className="text-indigo-400" size={18} /> Select Audio Track
                 </h3>
-                <button onClick={() => { setShowAudioSelector(false); audioPreviewRef.current?.pause(); setPlayingPreviewUrl(null); }} className="text-slate-400 hover:text-white">
-                  <X size={18} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <label className={`cursor-pointer px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1 transition-all ${isUploadingModalAudio ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {isUploadingModalAudio ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                    <span>Upload</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setIsUploadingModalAudio(true);
+                        try {
+                          const url = await uploadMediaToSupabaseBucket(file, 'media');
+                          const customTrack = {
+                            id: `custom_${Date.now()}`,
+                            name: file.name.replace(/\.[^/.]+$/, ''),
+                            url,
+                            category: 'ambient' as const,
+                            description: 'Custom uploaded track'
+                          };
+                          const existing = getStoredCustomTracks();
+                          localStorage.setItem('custom_audio_tracks', JSON.stringify([customTrack, ...existing]));
+                          applySelectedAudioUrl(url);
+                        } catch (err) {
+                          console.error('Modal audio upload error:', err);
+                        } finally {
+                          setIsUploadingModalAudio(false);
+                        }
+                      }}
+                    />
+                  </label>
+                  <button onClick={() => { setShowAudioSelector(false); audioPreviewRef.current?.pause(); setPlayingPreviewUrl(null); }} className="text-slate-400 hover:text-white">
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-1">

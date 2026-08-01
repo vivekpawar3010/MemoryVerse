@@ -9,8 +9,9 @@ import { ProtectionWrapper } from './ProtectionWrapper';
 import { THEME_REGISTRY } from './themes/ThemeRegistry';
 import { FloatingEffects } from './FloatingEffects';
 import { AutoScroller } from './AutoScroller';
-import { BACKGROUND_AUDIO } from './themes/AudioRegistry';
-import { Music } from 'lucide-react';
+import { BACKGROUND_AUDIO, getStoredCustomTracks } from './themes/AudioRegistry';
+import { uploadMediaToSupabaseBucket } from '../lib/supabase';
+import { Music, Upload, Loader2 } from 'lucide-react';
 
 // Lazy load all themes
 const themeComponents: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
@@ -50,9 +51,32 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-  const [visitorAudioUrl, setVisitorAudioUrl] = useState<string | null>(null);
+  
+  const localStorageAudioKey = `visitor_audio_${data.memoryId || data.groupName || 'default'}`;
+  const [visitorAudioUrl, setVisitorAudioUrlState] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(localStorageAudioKey);
+    } catch {
+      return null;
+    }
+  });
+
+  const setVisitorAudioUrl = (url: string | null) => {
+    setVisitorAudioUrlState(url);
+    try {
+      if (url) {
+        localStorage.setItem(localStorageAudioKey, url);
+      } else {
+        localStorage.removeItem(localStorageAudioKey);
+      }
+    } catch (e) {
+      console.warn('Failed to save visitor audio to localStorage', e);
+    }
+  };
+
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [customAudioInput, setCustomAudioInput] = useState("");
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   
   // Preload all textures so the 3D canvas doesn't stutter on scroll
   useEffect(() => {
@@ -204,39 +228,72 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
         {showAudioSettings && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-[#090d21] border border-white/10 rounded-2xl max-w-md w-full p-6 text-white space-y-6">
-              <h2 className="font-cinzel text-xl font-bold">Background Audio</h2>
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                {BACKGROUND_AUDIO.map(track => (
+              <div className="flex items-center justify-between">
+                <h2 className="font-cinzel text-xl font-bold flex items-center gap-2">
+                  <Music className="text-indigo-400" size={20} /> Background Audio
+                </h2>
+                <label className={`cursor-pointer px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all ${isUploadingAudio ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {isUploadingAudio ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                  <span>{isUploadingAudio ? 'Uploading...' : 'Upload File'}</span>
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setIsUploadingAudio(true);
+                      try {
+                        const url = await uploadMediaToSupabaseBucket(file, 'media');
+                        const customTrack = {
+                          id: `custom_${Date.now()}`,
+                          name: file.name.replace(/\.[^/.]+$/, ''),
+                          url,
+                          category: 'ambient' as const,
+                          description: 'Custom uploaded track'
+                        };
+                        const existing = getStoredCustomTracks();
+                        localStorage.setItem('custom_audio_tracks', JSON.stringify([customTrack, ...existing]));
+                        setVisitorAudioUrl(url);
+                        setShowAudioSettings(false);
+                      } catch (err) {
+                        console.error('Failed to upload audio:', err);
+                      } finally {
+                        setIsUploadingAudio(false);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                {[...BACKGROUND_AUDIO.filter(t => t.id !== 'custom_upload'), ...getStoredCustomTracks()].map(track => (
                   <button
                     key={track.id}
                     onClick={() => {
-                      if (track.id === 'custom_upload') {
-                        // handled by text input below
-                      } else {
-                        setVisitorAudioUrl(track.url);
-                        setShowAudioSettings(false);
-                      }
+                      setVisitorAudioUrl(track.url);
+                      setShowAudioSettings(false);
                     }}
-                    className={`w-full flex flex-col items-start p-4 rounded-xl border transition-all cursor-pointer ${
+                    className={`w-full flex flex-col items-start p-3.5 rounded-xl border transition-all cursor-pointer ${
                       (visitorAudioUrl === track.url || (visitorAudioUrl === null && track.url === (data.ambientAudio || data.audioUrl)))
-                        ? 'border-indigo-500 bg-indigo-500/20' 
+                        ? 'border-indigo-500 bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.2)]' 
                         : 'border-white/10 hover:bg-white/5'
                     }`}
                   >
-                    <span className="font-bold text-sm">{track.name}</span>
-                    <span className="text-xs text-slate-400 mt-1">{track.description}</span>
+                    <span className="font-bold text-sm text-left">{track.name}</span>
+                    <span className="text-xs text-slate-400 mt-0.5 text-left">{track.description}</span>
                   </button>
                 ))}
               </div>
               <div>
-                <span className="text-xs text-slate-400 mb-2 block">Custom Audio URL:</span>
+                <span className="text-xs text-slate-400 mb-2 block font-semibold">Or Enter Audio Web Link:</span>
                 <div className="flex space-x-2">
                   <input
                     type="text"
                     value={customAudioInput}
                     onChange={e => setCustomAudioInput(e.target.value)}
                     placeholder="https://..."
-                    className="flex-1 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                    className="flex-1 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
                   />
                   <button
                     onClick={() => {
@@ -245,7 +302,7 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
                         setShowAudioSettings(false);
                       }
                     }}
-                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold"
+                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-colors"
                   >
                     Set
                   </button>
@@ -253,7 +310,7 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
               </div>
               <button
                 onClick={() => setShowAudioSettings(false)}
-                className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 font-bold tracking-wider"
+                className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 font-bold tracking-wider text-xs transition-colors"
               >
                 Close
               </button>

@@ -1,22 +1,38 @@
-import React, { useState, useRef } from 'react';
-import { Music, Play, Pause, Upload, Trash2, CheckCircle2, Copy, Check, Volume2, Sparkles, Search } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Music, Play, Pause, Upload, Trash2, CheckCircle2, Copy, Check, Volume2, Sparkles, Search, Loader2 } from 'lucide-react';
 import { BACKGROUND_AUDIO, SOUND_EFFECTS, ENDING_AUDIO, AudioTrack } from '../themes/AudioRegistry';
 import { useToast, Toast } from '../ui/Toast';
+import { uploadMediaToSupabaseBucket } from '../../lib/supabase';
+
+const CUSTOM_TRACKS_KEY = 'custom_audio_tracks';
 
 export const AudioPanel: React.FC = () => {
-  const allInitialTracks = [
+  const builtInTracks = [
     ...BACKGROUND_AUDIO.filter(t => t.id !== 'custom_upload'),
     ...SOUND_EFFECTS,
     ...ENDING_AUDIO
   ];
 
-  const [tracks, setTracks] = useState<AudioTrack[]>(allInitialTracks);
+  const [tracks, setTracks] = useState<AudioTrack[]>(builtInTracks);
+  const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'ambient' | 'effect' | 'ending'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast, showToast, hideToast } = useToast();
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_TRACKS_KEY);
+      if (saved) {
+        const custom: AudioTrack[] = JSON.parse(saved);
+        setTracks([...custom, ...builtInTracks]);
+      }
+    } catch (e) {
+      console.warn('Failed to load custom audio tracks from localStorage:', e);
+    }
+  }, []);
 
   const handlePlayToggle = (track: AudioTrack) => {
     if (playingId === track.id) {
@@ -38,18 +54,30 @@ export const AudioPanel: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const persistentUrl = await uploadMediaToSupabaseBucket(file, 'media');
       const newTrack: AudioTrack = {
         id: `custom_${Date.now()}`,
         name: file.name.replace(/\.[^/.]+$/, ''),
-        url: URL.createObjectURL(file),
+        url: persistentUrl,
         category: activeTab === 'all' ? 'ambient' : activeTab,
         description: 'Custom uploaded track'
       };
+
+      const updatedCustomTracks = [newTrack, ...tracks.filter(t => t.id.startsWith('custom_'))];
+      localStorage.setItem(CUSTOM_TRACKS_KEY, JSON.stringify(updatedCustomTracks));
+      
       setTracks([newTrack, ...tracks]);
       showToast(`Uploaded ${newTrack.name} successfully!`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to upload audio file', 'error');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -59,7 +87,12 @@ export const AudioPanel: React.FC = () => {
       audioRef.current?.pause();
       setPlayingId(null);
     }
-    setTracks(tracks.filter(t => t.id !== id));
+    const updated = tracks.filter(t => t.id !== id);
+    setTracks(updated);
+    
+    const customOnly = updated.filter(t => t.id.startsWith('custom_'));
+    localStorage.setItem(CUSTOM_TRACKS_KEY, JSON.stringify(customOnly));
+    
     showToast('Track removed from library', 'success');
   };
 
@@ -82,9 +115,10 @@ export const AudioPanel: React.FC = () => {
           </h1>
           <p className="text-slate-400 text-sm">Browse, preview, copy links, and upload custom audio tracks for background music and card animations.</p>
         </div>
-        <label className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-5 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-2 text-sm font-bold shadow-lg shadow-indigo-500/20 shrink-0">
-          <Upload size={16} /> Upload Custom Track
-          <input type="file" accept="audio/*" className="hidden" onChange={handleUpload} />
+        <label className={`bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-5 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-2 text-sm font-bold shadow-lg shadow-indigo-500/20 shrink-0 ${isUploading ? 'opacity-75 pointer-events-none' : ''}`}>
+          {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+          <span>{isUploading ? 'Uploading Audio...' : 'Upload Custom Track'}</span>
+          <input type="file" accept="audio/*" className="hidden" onChange={handleUpload} disabled={isUploading} />
         </label>
       </div>
 

@@ -71,28 +71,28 @@ function FieldPhoto({ item, index, total, activePhotoId, setActivePhotoId }: any
           <group position={[0, -height/2 - 1.5, -0.2]}>
             <mesh position={[0, 1, 0]} rotation={[0, 0, 0]}>
               <cylinderGeometry args={[0.05, 0.05, 3]} />
-              <meshStandardMaterial color="#3e2723" transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
+              <meshStandardMaterial color="#3e2723" roughness={0.9} />
             </mesh>
             <mesh position={[-0.8, 0, 0]} rotation={[0, 0, 0.3]}>
               <cylinderGeometry args={[0.05, 0.05, 3]} />
-              <meshStandardMaterial color="#3e2723" transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
+              <meshStandardMaterial color="#3e2723" roughness={0.9} />
             </mesh>
             <mesh position={[0.8, 0, 0]} rotation={[0, 0, -0.3]}>
               <cylinderGeometry args={[0.05, 0.05, 3]} />
-              <meshStandardMaterial color="#3e2723" transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
+              <meshStandardMaterial color="#3e2723" roughness={0.9} />
             </mesh>
           </group>
         )}
 
-        <mesh castShadow>
+        <mesh position={[0, 0, 0.02]}>
           <planeGeometry args={[width, height]} />
-          <meshStandardMaterial map={texture as any} roughness={0.5} transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
+          <meshBasicMaterial map={texture as any} transparent={false} opacity={1} toneMapped={false} />
         </mesh>
         
         {/* Simple Frame */}
-        <mesh position={[0, 0, -0.05]} castShadow>
-          <boxGeometry args={[width + 0.2, height + 0.2, 0.1]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.9} transparent opacity={isAnyActive && !isActive ? 0.2 : 1} />
+        <mesh position={[0, 0, -0.03]}>
+          <boxGeometry args={[width + 0.2, height + 0.2, 0.06]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.9} transparent={false} opacity={1} />
         </mesh>
         
         {isActive && item.caption && (
