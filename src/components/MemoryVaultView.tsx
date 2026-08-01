@@ -9,8 +9,9 @@ import { ProtectionWrapper } from './ProtectionWrapper';
 import { THEME_REGISTRY } from './themes/ThemeRegistry';
 import { FloatingEffects } from './FloatingEffects';
 import { AutoScroller } from './AutoScroller';
-import { BACKGROUND_AUDIO, getStoredCustomTracks } from './themes/AudioRegistry';
+import { BACKGROUND_AUDIO, ENDING_AUDIO, SOUND_EFFECTS, getStoredCustomTracks, saveCustomTracksToLocalStorage, getAudioUrl } from './themes/AudioRegistry';
 import { uploadMediaToSupabaseBucket } from '../lib/supabase';
+import { ThreeErrorBoundary } from './ui/ThreeErrorBoundary';
 import { Music, Upload, Loader2 } from 'lucide-react';
 
 // Lazy load all themes
@@ -64,7 +65,7 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
   const setVisitorAudioUrl = (url: string | null) => {
     setVisitorAudioUrlState(url);
     try {
-      if (url) {
+      if (url && !url.startsWith('data:')) {
         localStorage.setItem(localStorageAudioKey, url);
       } else {
         localStorage.removeItem(localStorageAudioKey);
@@ -78,12 +79,7 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
   const [customAudioInput, setCustomAudioInput] = useState("");
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   
-  // Preload all textures so the 3D canvas doesn't stutter on scroll
-  useEffect(() => {
-    if (data.photos?.length) {
-      useTexture.preload(data.photos.map(p => p.imageUrl));
-    }
-  }, [data.photos]);
+
 
   // Determine if it's a low end device
   const isLowEndDevice = useMemo(() => {
@@ -202,20 +198,26 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
         )}
 
         {/* 3D Scene */}
-        <Canvas camera={{ position: [0, 0, 10], fov: 45 }} dpr={[1, 2]}>
-          <Suspense fallback={null}>
-            {/* ScrollControls manages GSAP-like scroll timeline mapping 0-1 */}
-            <ScrollControls pages={pages} damping={0.2} distance={1.5}>
-              <AutoScroller isPlaying={isAutoScrolling} />
-              <ThemeComponent 
-                data={data} 
-                isLowEndDevice={isLowEndDevice}
-                activePhotoId={activePhotoId}
-                setActivePhotoId={setActivePhotoId}
-              />
-            </ScrollControls>
-          </Suspense>
-        </Canvas>
+        <ThreeErrorBoundary>
+          <Canvas 
+            camera={{ position: [0, 0, 10], fov: 45 }} 
+            dpr={Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 1.5)}
+            gl={{ powerPreference: 'high-performance', antialias: true, failIfMajorPerformanceCaveat: false }}
+          >
+            <Suspense fallback={null}>
+              {/* ScrollControls manages GSAP-like scroll timeline mapping 0-1 */}
+              <ScrollControls pages={pages} damping={0.2} distance={1.5}>
+                <AutoScroller isPlaying={isAutoScrolling} />
+                <ThemeComponent 
+                  data={data} 
+                  isLowEndDevice={isLowEndDevice}
+                  activePhotoId={activePhotoId}
+                  setActivePhotoId={setActivePhotoId}
+                />
+              </ScrollControls>
+            </Suspense>
+          </Canvas>
+        </ThreeErrorBoundary>
 
         {/* Suspense fallback for the whole canvas */}
         <Suspense fallback={<CanvasLoader />}>
@@ -253,7 +255,7 @@ export const MemoryVaultView: React.FC<Props> = ({ data, onBack }) => {
                           description: 'Custom uploaded track'
                         };
                         const existing = getStoredCustomTracks();
-                        localStorage.setItem('custom_audio_tracks', JSON.stringify([customTrack, ...existing]));
+                        saveCustomTracksToLocalStorage([customTrack, ...existing]);
                         setVisitorAudioUrl(url);
                         setShowAudioSettings(false);
                       } catch (err) {

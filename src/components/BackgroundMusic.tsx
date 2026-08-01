@@ -7,7 +7,7 @@ interface BackgroundMusicProps {
   audioSrc?: string;
 }
 
-export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ audioSrc }) => {
+export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ audioSrc = '/assets/MergeAll.mp3' }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -76,6 +76,19 @@ export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ audioSrc }) =>
     }
   };
 
+  const startAudio = () => {
+    if (audioRef.current && audioSrc) {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((err) => {
+        console.warn('Browser prevented autoplay until user interaction:', err);
+      });
+    } else {
+      startSpaceAmbientSynth();
+      setIsPlaying(true);
+    }
+  };
+
   const toggleSound = () => {
     if (isPlaying) {
       if (audioRef.current && audioSrc) {
@@ -84,26 +97,45 @@ export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ audioSrc }) =>
       stopSpaceAmbientSynth();
       setIsPlaying(false);
     } else {
-      if (audioRef.current && audioSrc) {
-        audioRef.current.play().catch(() => {
-          // Fallback to ambient synth if custom file fails
-          startSpaceAmbientSynth();
-        });
-      } else {
-        startSpaceAmbientSynth();
-      }
-      setIsPlaying(true);
+      startAudio();
     }
   };
 
   useEffect(() => {
+    // 1. Attempt immediate autoplay on mount
+    if (audioRef.current && audioSrc) {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(() => {
+        // Autoplay policy prevented immediate playback; wait for first interaction
+      });
+    }
+
+    // 2. Global one-time interaction triggers for immediate playback on first click/touch/keypress/scroll
+    const handleFirstUserInteraction = () => {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().then(() => {
+          setIsPlaying(true);
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('click', handleFirstUserInteraction, { once: true });
+    window.addEventListener('keydown', handleFirstUserInteraction, { once: true });
+    window.addEventListener('touchstart', handleFirstUserInteraction, { once: true });
+    window.addEventListener('scroll', handleFirstUserInteraction, { once: true });
+
     return () => {
+      window.removeEventListener('click', handleFirstUserInteraction);
+      window.removeEventListener('keydown', handleFirstUserInteraction);
+      window.removeEventListener('touchstart', handleFirstUserInteraction);
+      window.removeEventListener('scroll', handleFirstUserInteraction);
       stopSpaceAmbientSynth();
       if (audioCtxRef.current) {
         audioCtxRef.current.close();
       }
     };
-  }, []);
+  }, [audioSrc]);
 
   return (
     <div className="fixed bottom-6 right-6 z-40">

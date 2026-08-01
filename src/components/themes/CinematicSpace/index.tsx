@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Stars, Sparkles, useTexture, useScroll, Float, Environment, Text, Html, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { ThemeProps } from '../ThemeInterface';
+import { getValidTextureUrl } from '../../ui/ThreeErrorBoundary';
 import gsap from 'gsap';
 
 // Easing helper
@@ -132,8 +133,9 @@ function MemoryNode({ item, index, isActive, onActivate }: any) {
   const style = item.frameStyle ?? item.frame_style ?? 'glass';
   const animation = item.animationType ?? item.animation_type ?? 'float';
 
+
   // Load texture safely if photo
-  const texture = item.type === 'photo' && imageUrl ? useTexture(imageUrl) : null;
+  const texture = item.type === 'photo' ? useTexture(getValidTextureUrl(imageUrl)) : null;
 
   useEffect(() => {
     document.body.style.cursor = hovered ? 'pointer' : 'auto';

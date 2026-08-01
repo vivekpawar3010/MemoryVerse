@@ -85,7 +85,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           })}
         </nav>
 
-        <div className="p-2 border-t border-indigo-500/20 shrink-0">
+        <div className="p-2 border-t border-indigo-500/20 shrink-0 flex flex-col gap-1">
           <button
             onClick={onLogout}
             title={isCollapsed ? "Logout" : undefined}
@@ -94,6 +94,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
             {!isCollapsed && <span className="font-semibold text-sm whitespace-nowrap">Logout</span>}
           </button>
+          {!isCollapsed && (
+            <a
+              href="https://vivekpawar.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-slate-400 hover:text-amber-300 font-medium transition-colors text-center py-1 block"
+            >
+              Developer: Vivek Pawar
+            </a>
+          )}
         </div>
       </aside>
 

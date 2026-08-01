@@ -190,8 +190,17 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 w-full text-center py-4 text-xs text-slate-500 font-sans-clean tracking-wider">
-        MemoryVerse Administrator Authentication Engine
+      <footer className="relative z-10 w-full text-center py-4 text-xs text-slate-500 font-sans-clean tracking-wider flex items-center justify-center space-x-2">
+        <span>MemoryVerse Administrator Engine</span>
+        <span>•</span>
+        <a
+          href="https://vivekpawar.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-amber-400 hover:text-amber-300 font-medium transition-colors underline decoration-amber-400/30"
+        >
+          Developer: Vivek Pawar
+        </a>
       </footer>
     </div>
   );

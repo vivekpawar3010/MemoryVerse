@@ -9,6 +9,7 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
+  ExternalLink,
   Image as ImageIcon,
   Video,
   Quote,
@@ -437,8 +438,19 @@ export const LandingPage: React.FC = () => {
 
       {/* Footer */}
       {isLoaded && (
-        <footer className="relative z-20 w-full text-center py-2 text-[11px] text-slate-500 font-sans-clean tracking-wider">
-          © 2026 MemoryVerse • Private Memory Sharing System
+        <footer className="relative z-20 w-full text-center py-2.5 text-[11px] text-slate-400 font-sans-clean tracking-wider flex flex-wrap items-center justify-center gap-2">
+          <span>© 2026 MemoryVerse • Private Memory Sharing System</span>
+          <span className="hidden sm:inline">•</span>
+          <a
+            href="https://vivekpawar.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-amber-300 hover:text-amber-200 hover:bg-white/10 transition-all font-medium group"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Developer: Vivek Pawar</span>
+            <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+          </a>
         </footer>
       )}
     </div>

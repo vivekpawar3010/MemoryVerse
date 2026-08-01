@@ -20,8 +20,8 @@ export async function uploadMediaToSupabaseBucket(
     // Compress image if it's an image
     if (file.type.startsWith('image/')) {
       const options = {
-        maxSizeMB: 1, // Compress to ~1MB max
-        maxWidthOrHeight: 1920, // Downscale to 1080p equivalent
+        maxSizeMB: 0.5, // Compress to ~500KB max
+        maxWidthOrHeight: 1280, // Downscale to 1280px max dimension
         useWebWorker: true,
         fileType: 'image/webp' // Convert to WebP client-side if possible
       };
@@ -36,7 +36,6 @@ export async function uploadMediaToSupabaseBucket(
       supabaseUrl !== 'https://placeholder.supabase.co' &&
       supabaseAnonKey !== 'placeholder-key'
     ) {
-      const fileExt = 'webp'; // Force webp extension conceptually, though fileExt is derived from actual file if we don't hardcode. Let's use the actual compressed file extension.
       const actualExt = fileToUpload.name.split('.').pop() || file.name.split('.').pop() || 'jpg';
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${actualExt}`;
       const filePath = `uploads/${fileName}`;
@@ -49,9 +48,11 @@ export async function uploadMediaToSupabaseBucket(
         });
 
       if (error) {
-        console.warn('Supabase storage upload returned error, using object URL fallback:', error.message);
-      } else if (data) {
-        // Request an optimized webp on the fly if it's an image
+        console.warn('Supabase storage upload returned error:', error.message);
+        throw new Error(`Storage upload failed: ${error.message}`);
+      }
+
+      if (data) {
         const transformOptions = file.type.startsWith('image/') 
           ? { transform: { format: 'webp', quality: 80 } as any } 
           : undefined;
@@ -65,16 +66,13 @@ export async function uploadMediaToSupabaseBucket(
         }
       }
     }
-  } catch (err) {
+  } catch (err: any) {
     console.warn('Supabase storage error:', err);
+    if (supabaseUrl !== 'https://placeholder.supabase.co' && supabaseAnonKey !== 'placeholder-key') {
+      throw err;
+    }
   }
 
-  // Local Data URL fallback for instant preview when offline or before bucket creation
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      resolve(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  });
+  // Fallback to lightweight Object URL for local/offline preview (never huge base64 strings)
+  return URL.createObjectURL(fileToUpload);
 }

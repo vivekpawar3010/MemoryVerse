@@ -3,12 +3,13 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Text, useTexture, ContactShadows, Float, Sky, Environment, useScroll } from '@react-three/drei';
 import * as THREE from 'three';
 import { ThemeProps } from '../ThemeInterface';
+import { getValidTextureUrl } from '../../ui/ThreeErrorBoundary';
 
 const damp = THREE.MathUtils.damp;
 
 function FieldPhoto({ item, index, total, activePhotoId, setActivePhotoId }: any) {
   const meshRef = useRef<THREE.Group>(null);
-  const texture = useTexture(item.imageUrl);
+  const texture = useTexture(getValidTextureUrl(item?.imageUrl));
   const isActive = activePhotoId === item.id;
   const isAnyActive = activePhotoId !== null;
   const { camera } = useThree();

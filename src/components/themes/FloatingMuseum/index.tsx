@@ -45,10 +45,12 @@ function MuseumParticles({ count = 50 }: { count?: number }) {
   );
 }
 
+import { getValidTextureUrl } from '../../ui/ThreeErrorBoundary';
+
 function MuseumPhoto({ item, index, total, activePhotoId, setActivePhotoId }: any) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
-  const texture = useTexture(item.imageUrl);
+  const texture = useTexture(getValidTextureUrl(item?.imageUrl));
   const isActive = activePhotoId === item.id;
   const isAnyActive = activePhotoId !== null;
   const [hovered, setHovered] = useState(false);

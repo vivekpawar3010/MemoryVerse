@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useEditorStore } from '../../store/EditorStore';
 import { Layers, Volume2, Eye, EyeOff, Film, LayoutTemplate, Music, Play, Pause, Check, X, Sparkles, Upload, Loader2 } from 'lucide-react';
 import { useToast, Toast } from '../ui/Toast';
-import { BACKGROUND_AUDIO, SOUND_EFFECTS, ENDING_AUDIO, AudioTrack, getStoredCustomTracks } from '../themes/AudioRegistry';
+import { BACKGROUND_AUDIO, SOUND_EFFECTS, ENDING_AUDIO, AudioTrack, getStoredCustomTracks, saveCustomTracksToLocalStorage } from '../themes/AudioRegistry';
 import { uploadMediaToSupabaseBucket } from '../../lib/supabase';
 
 const RichTextArea = ({ value, onChange, label }: { value: string, onChange: (v: string) => void, label: string }) => {
@@ -264,7 +264,7 @@ export const PropertyPanel: React.FC = () => {
                             description: 'Custom uploaded track'
                           };
                           const existing = getStoredCustomTracks();
-                          localStorage.setItem('custom_audio_tracks', JSON.stringify([customTrack, ...existing]));
+                          saveCustomTracksToLocalStorage([customTrack, ...existing]);
                           applySelectedAudioUrl(url);
                         } catch (err) {
                           console.error('Modal audio upload error:', err);

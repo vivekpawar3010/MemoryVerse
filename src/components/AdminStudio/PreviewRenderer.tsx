@@ -3,6 +3,7 @@ import { useEditorStore } from '../../store/EditorStore';
 import { Monitor, Tablet, Smartphone, Maximize, ZoomIn, ZoomOut, Save, RotateCcw, RotateCw, Play, Pause, ChevronLeft, ChevronRight, Compass } from 'lucide-react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { ScrollControls, useScroll } from '@react-three/drei';
+import { ThreeErrorBoundary } from '../ui/ThreeErrorBoundary';
 
 // Theme imports
 import CinematicSpaceTheme from '../themes/CinematicSpace';
@@ -173,31 +174,37 @@ export const PreviewRenderer: React.FC = () => {
           
           {/* Live 3D Canvas with ScrollControls */}
           <div className="absolute inset-0 z-0">
-            <Canvas camera={{ position: [0, 0, 10], fov: 45 }} dpr={[1, 2]}>
-              <Suspense fallback={null}>
-                <ScrollControls pages={pages} damping={0.25} distance={1.5}>
-                  <ScrollBridge 
-                    scrollProgress={scrollProgress} 
-                    setScrollProgress={setScrollProgress} 
-                    isPlaying={isAutoScrolling}
-                    targetProgress={targetProgress}
-                    setTargetProgress={setTargetProgress}
-                  />
-                  <ThemeComponent 
-                    data={{
-                      ...groupDetails,
-                      photos: items.filter(i => i.type === 'photo'),
-                      videos: items.filter(i => i.type === 'video'),
-                      quotes: items.filter(i => i.type === 'quote')
-                    } as any}
-                    isLowEndDevice={false}
-                    activePhotoId={selectedItemIds.length > 0 ? selectedItemIds[0] : null}
-                    setActivePhotoId={(id: string | null) => selectItem(id, false)}
-                    isAdminEditMode={true}
-                  />
-                </ScrollControls>
-              </Suspense>
-            </Canvas>
+            <ThreeErrorBoundary>
+              <Canvas 
+                camera={{ position: [0, 0, 10], fov: 45 }} 
+                dpr={Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 1.5)}
+                gl={{ powerPreference: 'high-performance', antialias: true, failIfMajorPerformanceCaveat: false }}
+              >
+                <Suspense fallback={null}>
+                  <ScrollControls pages={pages} damping={0.25} distance={1.5}>
+                    <ScrollBridge 
+                      scrollProgress={scrollProgress} 
+                      setScrollProgress={setScrollProgress} 
+                      isPlaying={isAutoScrolling}
+                      targetProgress={targetProgress}
+                      setTargetProgress={setTargetProgress}
+                    />
+                    <ThemeComponent 
+                      data={{
+                        ...groupDetails,
+                        photos: items.filter(i => i.type === 'photo'),
+                        videos: items.filter(i => i.type === 'video'),
+                        quotes: items.filter(i => i.type === 'quote')
+                      } as any}
+                      isLowEndDevice={false}
+                      activePhotoId={selectedItemIds.length > 0 ? selectedItemIds[0] : null}
+                      setActivePhotoId={(id: string | null) => selectItem(id, false)}
+                      isAdminEditMode={true}
+                    />
+                  </ScrollControls>
+                </Suspense>
+              </Canvas>
+            </ThreeErrorBoundary>
           </div>
           
         </div>

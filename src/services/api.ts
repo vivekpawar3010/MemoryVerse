@@ -961,5 +961,37 @@ export const apiService = {
       visitedAt: row.visited_at,
     }));
   },
+
+  // -------------------------------------------------------------------------
+  // Custom Audio Tracks (Stored in Database)
+  // -------------------------------------------------------------------------
+  getCustomAudioTracks: async (): Promise<any[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('custom_audio_tracks')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error || !data) return [];
+      return data.map((r) => ({
+        id: r.id,
+        name: r.name,
+        url: r.url,
+        category: r.category || 'ambient',
+        description: r.description || 'Custom uploaded track'
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  addCustomAudioTrack: async (name: string, url: string, category = 'ambient', description = 'Custom uploaded track') => {
+    const { data, error } = await supabase
+      .from('custom_audio_tracks')
+      .insert({ name, url, category, description })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
 };
 

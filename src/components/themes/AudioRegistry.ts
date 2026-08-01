@@ -8,6 +8,13 @@ export interface AudioTrack {
 
 export const BACKGROUND_AUDIO: AudioTrack[] = [
   { 
+    id: 'merge_all_cinematic', 
+    name: 'Merge All (Cinematic)', 
+    url: '/assets/MergeAll.mp3', 
+    category: 'ambient',
+    description: 'Custom merged cinematic audio track.' 
+  },
+  { 
     id: 'friendship_1', 
     name: 'Acoustic Memories', 
     url: 'https://cdn.pixabay.com/download/audio/2022/01/21/audio_31743c58bb.mp3', 
@@ -85,12 +92,50 @@ export const ENDING_AUDIO: AudioTrack[] = [
   }
 ];
 
+export const clearLegacyBase64FromLocalStorage = () => {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        const val = localStorage.getItem(key);
+        if (val && (val.includes('data:image') || val.includes('data:audio') || val.length > 50000)) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+  } catch (e) {
+    console.warn('LocalStorage cleanup note:', e);
+  }
+};
+
+// Self-clearing legacy storage guard
+clearLegacyBase64FromLocalStorage();
+
 export const getStoredCustomTracks = (): AudioTrack[] => {
   try {
     const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('custom_audio_tracks') : null;
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    const tracks: AudioTrack[] = JSON.parse(saved);
+    // Filter out huge base64 data URLs from localStorage to prevent quota crashes
+    return Array.isArray(tracks) ? tracks.filter(t => t && t.url && !t.url.startsWith('data:')) : [];
   } catch {
     return [];
+  }
+};
+
+export const saveCustomTracksToLocalStorage = (tracks: AudioTrack[]): boolean => {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    // Strip out base64 data URLs before storing to keep localStorage clean & lightweight
+    const cleanTracks = tracks.filter(t => t && t.url && !t.url.startsWith('data:'));
+    localStorage.setItem('custom_audio_tracks', JSON.stringify(cleanTracks));
+    return true;
+  } catch (e) {
+    console.warn('Failed to save custom audio tracks to localStorage:', e);
+    return false;
   }
 };
 

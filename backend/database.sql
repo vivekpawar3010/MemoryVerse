@@ -172,6 +172,16 @@
         visited_at   TIMESTAMPTZ DEFAULT NOW()
     );
 
+    -- 9. Custom Audio Tracks (DB-stored background music)
+    CREATE TABLE IF NOT EXISTS custom_audio_tracks (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name        VARCHAR(255) NOT NULL,
+        url         TEXT NOT NULL,
+        category    VARCHAR(50) DEFAULT 'ambient',
+        description TEXT,
+        created_at  TIMESTAMPTZ DEFAULT NOW()
+    );
+
 
     -- ================================================================
     -- STEP 3: INDEXES
@@ -184,19 +194,21 @@
     CREATE INDEX IF NOT EXISTS idx_members_group_id         ON members(group_id);
     CREATE INDEX IF NOT EXISTS idx_visitor_logs_group_id    ON visitor_logs(group_id);
     CREATE INDEX IF NOT EXISTS idx_visitor_logs_visited_at  ON visitor_logs(visited_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_custom_audio_tracks_cat   ON custom_audio_tracks(category);
 
 
     -- ================================================================
     -- STEP 4: ROW LEVEL SECURITY (RLS)
     -- ================================================================
-    ALTER TABLE admins         ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE memory_groups  ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE members        ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE photos         ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE videos         ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE quotes         ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE final_messages ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE visitor_logs   ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE admins              ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE memory_groups       ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE members             ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE photos              ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE videos              ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE quotes              ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE final_messages      ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE visitor_logs        ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE custom_audio_tracks ENABLE ROW LEVEL SECURITY;
 
     -- PUBLIC READ — visitors and admin can read all content
     CREATE POLICY "public_read_admins"         ON admins         FOR SELECT TO anon, authenticated USING (true);
@@ -205,7 +217,9 @@
     CREATE POLICY "public_read_photos"         ON photos         FOR SELECT TO anon, authenticated USING (true);
     CREATE POLICY "public_read_videos"         ON videos         FOR SELECT TO anon, authenticated USING (true);
     CREATE POLICY "public_read_quotes"         ON quotes         FOR SELECT TO anon, authenticated USING (true);
-    CREATE POLICY "public_read_final_messages" ON final_messages FOR SELECT TO anon, authenticated USING (true);
+    CREATE POLICY "public_read_final_messages"      ON final_messages      FOR SELECT TO anon, authenticated USING (true);
+    CREATE POLICY "public_read_custom_audio_tracks" ON custom_audio_tracks FOR SELECT TO anon, authenticated USING (true);
+    CREATE POLICY "public_write_custom_audio_tracks" ON custom_audio_tracks FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
     -- AUTHENTICATED WRITE — only Supabase Auth session (admin) can write
     -- memory_groups

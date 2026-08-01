@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Music, Play, Pause, Upload, Trash2, CheckCircle2, Copy, Check, Volume2, Sparkles, Search, Loader2 } from 'lucide-react';
-import { BACKGROUND_AUDIO, SOUND_EFFECTS, ENDING_AUDIO, AudioTrack } from '../themes/AudioRegistry';
+import { BACKGROUND_AUDIO, SOUND_EFFECTS, ENDING_AUDIO, AudioTrack, getStoredCustomTracks, saveCustomTracksToLocalStorage } from '../themes/AudioRegistry';
 import { useToast, Toast } from '../ui/Toast';
 import { uploadMediaToSupabaseBucket } from '../../lib/supabase';
-
-const CUSTOM_TRACKS_KEY = 'custom_audio_tracks';
 
 export const AudioPanel: React.FC = () => {
   const builtInTracks = [
@@ -23,14 +21,9 @@ export const AudioPanel: React.FC = () => {
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(CUSTOM_TRACKS_KEY);
-      if (saved) {
-        const custom: AudioTrack[] = JSON.parse(saved);
-        setTracks([...custom, ...builtInTracks]);
-      }
-    } catch (e) {
-      console.warn('Failed to load custom audio tracks from localStorage:', e);
+    const custom = getStoredCustomTracks();
+    if (custom && custom.length > 0) {
+      setTracks([...custom, ...builtInTracks]);
     }
   }, []);
 
@@ -70,7 +63,7 @@ export const AudioPanel: React.FC = () => {
       };
 
       const updatedCustomTracks = [newTrack, ...tracks.filter(t => t.id.startsWith('custom_'))];
-      localStorage.setItem(CUSTOM_TRACKS_KEY, JSON.stringify(updatedCustomTracks));
+      saveCustomTracksToLocalStorage(updatedCustomTracks);
       
       setTracks([newTrack, ...tracks]);
       showToast(`Uploaded ${newTrack.name} successfully!`, 'success');
@@ -91,7 +84,7 @@ export const AudioPanel: React.FC = () => {
     setTracks(updated);
     
     const customOnly = updated.filter(t => t.id.startsWith('custom_'));
-    localStorage.setItem(CUSTOM_TRACKS_KEY, JSON.stringify(customOnly));
+    saveCustomTracksToLocalStorage(customOnly);
     
     showToast('Track removed from library', 'success');
   };

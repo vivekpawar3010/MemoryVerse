@@ -67,6 +67,20 @@ export const ProtectionWrapper: React.FC<ProtectionWrapperProps> = ({
           ))}
         </div>
       )}
+
+      {/* Floating Developer Info Badge */}
+      <div className="fixed bottom-3 right-3 z-[9999] pointer-events-auto">
+        <a 
+          href="https://vivekpawar.vercel.app/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-950/80 hover:bg-slate-900 backdrop-blur-md border border-white/10 text-[10px] text-slate-300 hover:text-amber-300 transition-all shadow-lg group"
+          title="Visit Vivek Pawar's Developer Portfolio"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-sans-clean font-medium tracking-wide">Developer: Vivek Pawar</span>
+        </a>
+      </div>
     </div>
   );
 };

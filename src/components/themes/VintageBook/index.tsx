@@ -3,10 +3,11 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Text, useTexture, ContactShadows, useScroll } from '@react-three/drei';
 import * as THREE from 'three';
 import { ThemeProps } from '../ThemeInterface';
+import { getValidTextureUrl } from '../../ui/ThreeErrorBoundary';
 
 function Page({ item, index, total, activePhotoId, setActivePhotoId }: any) {
   const groupRef = useRef<THREE.Group>(null);
-  const texture = useTexture(item.imageUrl);
+  const texture = useTexture(getValidTextureUrl(item?.imageUrl));
   const scroll = useScroll();
   const isActive = activePhotoId === item.id;
   const isAnyActive = activePhotoId !== null;
